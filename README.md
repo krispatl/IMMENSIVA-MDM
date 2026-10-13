@@ -6,6 +6,14 @@ Manage headsets, group them by room, install apps and transfer files. Built for 
 
 ![IMMENSIVA MDM console](docs/images/console.jpg)
 
+![Daily device controls](docs/images/workspace.jpg)
+
+## Quick start
+
+[Daily operator quick start](docs/QUICK_START.md) · [Full setup guide](#simple-operator-guide)
+
+**Connect → select headsets → choose an action → review → send.** Daily tasks are Open app, Install app and Send files. Advanced device controls are grouped under Maintenance. The fleet summary shows online, offline, low-battery and selected counts from live device reports.
+
 ## Simple operator guide
 
 ![Connect, organise, install and launch](immensiva_mdm/web/assets/operator-flow.svg)
@@ -14,7 +22,7 @@ Manage headsets, group them by room, install apps and transfer files. Built for 
 2. **Connect the headsets.** Put the PC and headsets on the same trusted venue network. Install and open the official [STYLY-MDM headset client](https://github.com/styly-dev/STYLY-MDM/releases/tag/v0.6.0). Use discovery, or enter the venue PC's LAN address and port **7070** in the client. On PICO Business, provision the client permissions including All files access for remote installation. An awake, connected headset should appear in **Your fleet**.
 3. **Organise rooms.** Click **Manage rooms**, create groups and assign the intended headsets. Give each headset a clear label. Select a room or individual headsets before sending a command.
 4. **Install an experience.** Expand **Install an experience**, choose the Android `.apk`, then install to the selected headsets. Watch the activity log and device results: dispatch is not proof of successful installation.
-5. **Open an experience.** Enter its Android package name under **Open an experience**, then **Launch to Selected**. The **Lord Lyrical** shortcut prepares `com.fifthyang.lordlyrical`; it does not select or launch devices automatically. **Show launcher** opens the separate local JERU timing console when available on port 8811. MDM starts apps; it does not synchronise music or show cues.
+5. **Open an experience.** Enter its Android package name under **Open app**, then **Open on selected headsets**. The **Lord Lyrical** shortcut prepares `com.fifthyang.lordlyrical`; it does not select or launch devices automatically. **Show launcher** opens the separate local JERU timing console when available on port 8811. MDM starts apps; it does not synchronise music or show cues.
 6. **Finish.** Use **Stop IMMENSIVA MDM.cmd** to stop the server started by this package. Closing the browser alone leaves the server running. Preserve the `MDM` folder when updating: it contains your fleet, groups, uploaded apps and content.
 
 The guide is also available from **Operator guide** in the console (`/guide`).

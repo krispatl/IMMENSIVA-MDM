@@ -1,9 +1,19 @@
 <header class="venue-masthead">
   <div class="institutions"><img class="espronceda-logo" src="/brand/assets/espronceda.webp" alt="ESPRONCEDA Institute of Art & Culture"><span class="identity-divider"></span><img class="immensiva-logo" src="/brand/assets/immensiva.png" alt="IMMENSIVA"><div class="masthead-partner"><small>POWERED BY</small><img src="/brand/assets/styly-black.png" alt="STYLY" width="82" height="24"></div></div>
-  <div class="masthead-meta"><span class="location-pill"><i></i> Barcelona / Spatial arts</span><a href="/guide" target="_blank" rel="noopener">Operator guide ↗</a></div>
+  <div class="masthead-meta"><span class="location-pill"><i></i> Barcelona / Spatial arts</span><a href="/guide" target="_blank" rel="noopener">Quick start ↗</a></div>
 </header>
 <section class="venue-intro">
   <div class="intro-copy"><div class="eyebrow">ESPRONCEDA / IMMENSIVA</div><h1>IMMENSIVA <span>MDM</span><sup>01</sup></h1><p>Manage headsets, rooms and installed apps.</p></div>
   <div class="intro-art" aria-hidden="true"><svg viewBox="0 0 310 120"><defs><linearGradient id="waveTint"><stop stop-color="#ba286c"/><stop offset="1" stop-color="#44379b"/></linearGradient></defs><g fill="none" stroke="url(#waveTint)" stroke-width="1.2"><ellipse cx="155" cy="60" rx="139" ry="25" transform="rotate(-16 155 60)"/><ellipse cx="155" cy="60" rx="118" ry="41" transform="rotate(-16 155 60)"/><ellipse cx="155" cy="60" rx="94" ry="52" transform="rotate(-16 155 60)"/><ellipse cx="155" cy="60" rx="67" ry="57" transform="rotate(-16 155 60)"/><ellipse cx="155" cy="60" rx="37" ry="60" transform="rotate(-16 155 60)"/></g><circle cx="270" cy="32" r="4" fill="#ba286c"/></svg><span>Barcelona / Venue management</span></div>
 </section>
 <nav class="venue-shortcuts" aria-label="Venue shortcuts"><button id="venueDevices">Headsets <span>↗</span></button><button id="venueRooms">Rooms & groups <span>↗</span></button><button id="venueJeru">Lord Lyrical <span>↗</span></button><a id="venueShow" href="http://127.0.0.1:8811" target="_blank" rel="noopener">Show launcher <span>↗</span></a><div class="partner"><small>POWERED BY</small><img src="/brand/assets/styly-white.png" alt="STYLY"></div></nav>
+
+<section class="operator-overview" aria-label="Fleet overview">
+ <div class="fleet-intro"><span class="eyebrow">TODAY'S FLEET</span><strong id="fleetHeadline">Connecting to the venue…</strong><p id="fleetHint">Device status updates while the console is open.</p></div>
+ <div class="fleet-stat"><strong id="fleetOnline">—</strong><span>Online</span></div>
+ <div class="fleet-stat"><strong id="fleetOffline">—</strong><span>Offline</span></div>
+ <div class="fleet-stat"><strong id="fleetBattery">—</strong><span>Low battery</span></div>
+ <div class="fleet-stat"><strong id="fleetSelected">0</strong><span>Selected</span></div>
+</section>
+<div class="operator-steps" aria-label="Operator workflow"><button id="stepConnect"><span>01</span><strong>Connect</strong><small>PC + headsets on the venue network</small></button><button id="stepSelect"><span>02</span><strong>Select</strong><small>Choose a room or individual headsets</small></button><button id="stepAction"><span>03</span><strong>Open</strong><small>Check your selection, then send</small></button></div>
+<details class="connection-help" id="connectionHelp"><summary>Headset connection checklist</summary><ol><li>Keep the PC and headsets on the same reachable venue network.</li><li>Open STYLY-MDM Client in each headset and keep it awake.</li><li>Choose Auto-Discovery, or enter this PC's LAN address with port 7070.</li><li>Wait for the headset to appear as Online below.</li></ol><a href="/guide#connect">Full setup instructions ↗</a></details>

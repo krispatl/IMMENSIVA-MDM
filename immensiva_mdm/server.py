@@ -6,23 +6,30 @@ import styly_mdm
 from styly_mdm import server as upstream
 
 WEB=Path(__file__).resolve().parent/'web'
-VERSION='1.0.0'
+VERSION='1.1.0'
 
 def console_html():
     source=(Path(styly_mdm.__file__).parent/'static/index.html').read_text(encoding='utf-8')
     for marker in ['id="serverVersion"','id="targetsBody"','id="btnLaunch"','id="btnInstall"']:
         if marker not in source:raise RuntimeError('Unsupported STYLY-MDM console layout: '+marker)
     source=source.replace('<title>STYLY-MDM - Device Management</title>','<title>IMMENSIVA MDM · ESPRONCEDA</title>')
-    source=source.replace('</head>','<link rel="stylesheet" href="/brand/theme.css"><script src="/brand/venue.js" defer></script></head>')
+    source=source.replace('</head>','<link rel="stylesheet" href="/brand/theme.css"><link rel="stylesheet" href="/brand/operator.css"><script src="/brand/venue.js" defer></script></head>')
     source=source.replace('<div class="shell">',(WEB/'masthead.html').read_text(encoding='utf-8')+'<div class="shell">',1)
     source=source.replace('<div class="brand">STYLY-<span>MDM</span><span class="brand-version" id="serverVersion"></span></div>',
         '<div class="brand"><span class="brand-label">VENUE CONSOLE</span><span class="brand-version" id="serverVersion"></span></div>')
-    source=source.replace('① Targets','01 / Your fleet').replace('② Actions','02 / Device controls')
+    source=source.replace('① Targets','Choose your headsets').replace('② Actions','Choose an action')
     source=source.replace('Quick Install','Install an experience').replace('Launch Command','Open an experience')
+    source=source.replace('>Launch to Selected<','>Open on selected headsets<')
     source=source.replace('Manage Groups','Manage rooms').replace('No APK selected','Choose an Android app (.apk)')
     source=source.replace('placeholder="com.example.app"','placeholder="App package, e.g. com.fifthyang.lordlyrical"')
     source=source.replace('placeholder="/sdcard/STYLY/content"','placeholder="/sdcard/IMMENSIVA/content"')
-    return source.replace('</body>',(WEB/'footer.html').read_text(encoding='utf-8')+'</body>')
+    source=source.replace("return (d.label || '').toLowerCase().indexOf(q) !== -1;", "return [d.label,getDeviceId(d),d.model,d.ip].filter(Boolean).join(' ').toLowerCase().indexOf(q) !== -1;")
+    source=source.replace('Filter devices by name…','Find by name, ID or IP…')
+    # Use the existing authority-backed UI state; do not open a second admin socket.
+    source=source.replace('function render() {','function render() {\n        document.dispatchEvent(new CustomEvent("venue:state", {detail:{devices:devices,selected:Array.from(selectedIds),groups:groups}}));',1)
+    source=source.replace('<div class="commands">',(WEB/'tasks.html').read_text(encoding='utf-8')+'<div class="commands">',1)
+    source=source.replace('</body>',(WEB/'operator-dialog.html').read_text(encoding='utf-8')+(WEB/'footer.html').read_text(encoding='utf-8')+'</body>')
+    return source
 
 @web.middleware
 async def branding(request, handler):
