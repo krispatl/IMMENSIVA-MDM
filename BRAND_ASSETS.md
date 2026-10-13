@@ -7,5 +7,6 @@ Retrieved 13 October 2026 for the user-requested venue branding. Images are unmo
 | ESPRONCEDA | `espronceda.webp` | [Official website logo](https://www.espronceda.net/wp-content/uploads/2024/12/Espronceda-logo-scaled.webp) |
 | IMMENSIVA | `immensiva.png` | [Official website logo](https://www.immensiva.com/wp-content/uploads/2019/07/Immensiva-V1-e1562162609719.png) |
 | STYLY | `styly-black.png`, `styly-white.png` | [Official brand assets](https://styly.inc/ja/brand-asset/), [official downloadable logo archive](https://drive.google.com/file/d/1P0ULTkkbdSa3wrxSY8vN383FGdPq5L97/view) |
+| Generalitat de Catalunya | `generalitat-catalunya.jpg` | [Official identity downloads](https://identitatcorporativa.gencat.cat/ca/descarregues/identificacio-basica/cat/), [horizontal colour logo](https://identitatcorporativa.gencat.cat/web/.content/Documentacio/descarregues/identificacio/COLOR/idbh.jpg) |
 
 All local logo files are under `immensiva_mdm/web/assets`. `operator-flow.svg` and the orbital masthead graphic are original interface graphics, not replacements for institutional logos.

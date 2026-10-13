@@ -2,7 +2,7 @@
 
 **ESPRONCEDA / IMMENSIVA headset management, powered by STYLY-MDM.**
 
-A venue console for organising headsets into rooms, installing experiences, transferring content and opening apps on the selected fleet. Includes the official ESPRONCEDA, IMMENSIVA and STYLY identities, a Lord Lyrical shortcut and an in-app operator guide.
+Manage headsets, group them by room, install apps and transfer files. Built for ESPRONCEDA / IMMENSIVA using STYLY-MDM.
 
 ![IMMENSIVA MDM console](docs/images/console.jpg)
 
@@ -17,7 +17,9 @@ A venue console for organising headsets into rooms, installing experiences, tran
 5. **Open an experience.** Enter its Android package name under **Open an experience**, then **Launch to Selected**. The **Lord Lyrical** shortcut prepares `com.fifthyang.lordlyrical`; it does not select or launch devices automatically. **Show launcher** opens the separate local JERU timing console when available on port 8811. MDM starts apps; it does not synchronise music or show cues.
 6. **Finish.** Use **Stop IMMENSIVA MDM.cmd** to stop the server started by this package. Closing the browser alone leaves the server running. Preserve the `MDM` folder when updating: it contains your fleet, groups, uploaded apps and content.
 
-The full illustrated guide is available from **Operator guide** in the console (`/guide`).
+The guide is also available from **Operator guide** in the console (`/guide`).
+
+![Operator guide](docs/images/guide.jpg)
 
 ### If a headset does not appear
 
@@ -60,3 +62,9 @@ For a distributable Windows folder, run `scripts/build_windows.py --runtime PATH
 The upstream console is designed for a **trusted venue LAN**. It provides device administration and is not an authenticated public-cloud service. Do not expose its ports to the public internet.
 
 Software: Apache-2.0; see [LICENSE](LICENSE) and [NOTICE](NOTICE). Official logos remain the property of their owners; their provenance and separate rights are in [BRAND_ASSETS.md](BRAND_ASSETS.md). This project is an ESPRONCEDA / IMMENSIVA venue adaptation, not a claim of STYLY endorsement.
+
+## Support
+
+Amb el suport de la Generalitat de Catalunya.
+
+<img src="immensiva_mdm/web/assets/generalitat-catalunya.jpg" alt="Generalitat de Catalunya" width="220">

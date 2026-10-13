@@ -22,7 +22,7 @@ def console_html():
     source=source.replace('Manage Groups','Manage rooms').replace('No APK selected','Choose an Android app (.apk)')
     source=source.replace('placeholder="com.example.app"','placeholder="App package, e.g. com.fifthyang.lordlyrical"')
     source=source.replace('placeholder="/sdcard/STYLY/content"','placeholder="/sdcard/IMMENSIVA/content"')
-    return source
+    return source.replace('</body>',(WEB/'footer.html').read_text(encoding='utf-8')+'</body>')
 
 @web.middleware
 async def branding(request, handler):
