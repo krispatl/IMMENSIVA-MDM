@@ -1,0 +1,13 @@
+.venv/
+runtime/
+dist/
+MDM/
+logs/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.log
+*.pid
+*.apk
+device_registry.json
+local-config.json

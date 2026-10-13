@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "immensiva-mdm"
+version = "1.0.0"
+description = "ESPRONCEDA / IMMENSIVA venue headset management, powered by STYLY-MDM"
+requires-python = ">=3.11"
+dependencies = ["styly-mdm==0.6.0", "psutil>=7.0,<8"]
+license = "Apache-2.0"
+
+[project.scripts]
+immensiva-mdm = "immensiva_mdm.server:main"
+
+[tool.setuptools.packages.find]
+include = ["immensiva_mdm*"]
+
+[tool.setuptools.package-data]
+immensiva_mdm = ["web/*", "web/assets/*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

@@ -1,0 +1,2 @@
+styly-mdm==0.6.0
+psutil>=7.0,<8

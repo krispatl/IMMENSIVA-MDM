@@ -1,0 +1,50 @@
+"""Brand and operator UX adapter; upstream device protocol stays unchanged."""
+from pathlib import Path
+import importlib.metadata, json
+from aiohttp import web
+import styly_mdm
+from styly_mdm import server as upstream
+
+WEB=Path(__file__).resolve().parent/'web'
+VERSION='1.0.0'
+
+def console_html():
+    source=(Path(styly_mdm.__file__).parent/'static/index.html').read_text(encoding='utf-8')
+    for marker in ['id="serverVersion"','id="targetsBody"','id="btnLaunch"','id="btnInstall"']:
+        if marker not in source:raise RuntimeError('Unsupported STYLY-MDM console layout: '+marker)
+    source=source.replace('<title>STYLY-MDM - Device Management</title>','<title>IMMENSIVA MDM · ESPRONCEDA</title>')
+    source=source.replace('</head>','<link rel="stylesheet" href="/brand/theme.css"><script src="/brand/venue.js" defer></script></head>')
+    source=source.replace('<div class="shell">',(WEB/'masthead.html').read_text(encoding='utf-8')+'<div class="shell">',1)
+    source=source.replace('<div class="brand">STYLY-<span>MDM</span><span class="brand-version" id="serverVersion"></span></div>',
+        '<div class="brand"><span class="brand-label">VENUE CONSOLE</span><span class="brand-version" id="serverVersion"></span></div>')
+    source=source.replace('① Targets','01 / Your fleet').replace('② Actions','02 / Device controls')
+    source=source.replace('Quick Install','Install an experience').replace('Launch Command','Open an experience')
+    source=source.replace('Manage Groups','Manage rooms').replace('No APK selected','Choose an Android app (.apk)')
+    source=source.replace('placeholder="com.example.app"','placeholder="App package, e.g. com.fifthyang.lordlyrical"')
+    source=source.replace('placeholder="/sdcard/STYLY/content"','placeholder="/sdcard/IMMENSIVA/content"')
+    return source
+
+@web.middleware
+async def branding(request, handler):
+    if request.path=='/' and request.method in ('GET','HEAD'):
+        return web.Response(text=console_html(),content_type='text/html',headers={'Cache-Control':'no-store'})
+    if request.path=='/health':
+        return web.json_response(dict(product='IMMENSIVA MDM',version=VERSION,backend='STYLY-MDM',backendVersion=importlib.metadata.version('styly-mdm')))
+    if request.path=='/guide':return web.FileResponse(WEB/'guide.html')
+    return await handler(request)
+
+def create_app():
+    app=_original_create_app()
+    app.middlewares.insert(0,branding)
+    app.router.add_static('/brand',WEB)
+    return app
+
+_original_create_app=upstream.create_app
+
+def main():
+    # Preserve the vendor CLI, discovery guard, durable registry, transfer
+    # scheduler, signed client seeding and all HTTP/WebSocket handlers.
+    upstream.create_app=create_app
+    upstream.main()
+
+if __name__=='__main__':main()
