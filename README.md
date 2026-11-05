@@ -4,6 +4,8 @@
 
 Manage headsets, group them by room, install apps and transfer files. Built for ESPRONCEDA / IMMENSIVA using STYLY-MDM.
 
+> **Origin:** IMMENSIVA MDM is derived from [STYLY-MDM](https://github.com/styly-dev/STYLY-MDM), developed by STYLY, Inc., and adapted for ESPRONCEDA / IMMENSIVA. This repository is no longer linked to STYLY-MDM in GitHub's fork network; STYLY-MDM is the original upstream project.
+
 ![IMMENSIVA MDM console](docs/images/console.jpg)
 
 ![Daily device controls](docs/images/workspace.jpg)
