@@ -11,7 +11,7 @@ def main():
     if target.exists():raise ValueError('Output already exists; archive it before building again')
     target.mkdir(parents=True)
     shutil.copytree(source,target/'runtime',ignore=shutil.ignore_patterns('__pycache__','*.pyc'))
-    (target/'runtime/python311._pth').write_text('.\nLib\nDLLs\nLib/site-packages\n..\nimport site\n')
+    (target/'runtime/python311._pth').write_text('python311.zip\n.\nLib\nDLLs\nLib/site-packages\n..\nimport site\n')
     shutil.copytree(root/'immensiva_mdm',target/'immensiva_mdm',ignore=shutil.ignore_patterns('__pycache__','*.pyc'))
     shutil.copytree(root/'docs',target/'docs')
     for filename in ['Start IMMENSIVA MDM.cmd','Stop IMMENSIVA MDM.cmd','README.md','LICENSE','NOTICE','BRAND_ASSETS.md']:

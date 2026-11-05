@@ -46,7 +46,8 @@ async def test_group_and_selected_device_launch(app):
         await a.close();await b.close();await admin.close()
 
 @pytest.mark.asyncio
-async def test_apk_upload_and_download(app):
+async def test_apk_upload_and_download(app, monkeypatch):
+    monkeypatch.setattr(server.upstream, 'get_local_ip_addresses', lambda: ['192.0.2.10'])
     # Protocol fixture only: never sent to a physical headset or claimed installable.
     data=io.BytesIO()
     with zipfile.ZipFile(data,'w') as z:z.writestr('AndroidManifest.xml','fixture')
@@ -54,4 +55,6 @@ async def test_apk_upload_and_download(app):
     async with TestServer(app) as s,ClientSession() as c:
         async with c.post(s.make_url('/api/apks'),data=form) as r:
             assert r.status==200;value=await r.json()
-        async with c.get(value['apk_url']) as r:assert await r.read()==payload
+        download = s.make_url('/apks/' + value['apk_filename'])
+        assert value['apk_url'] == str(download.with_host('192.0.2.10'))
+        async with c.get(download) as r:assert await r.read()==payload

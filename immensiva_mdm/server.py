@@ -1,7 +1,9 @@
 """Brand and operator UX adapter; upstream device protocol stays unchanged."""
 from pathlib import Path
 import importlib.metadata, json
+from ipaddress import ip_address
 from aiohttp import web
+from yarl import URL
 import styly_mdm
 from styly_mdm import server as upstream
 
@@ -38,6 +40,17 @@ async def branding(request, handler):
     if request.path=='/health':
         return web.json_response(dict(product='IMMENSIVA MDM',version=VERSION,backend='STYLY-MDM',backendVersion=importlib.metadata.version('styly-mdm')))
     if request.path=='/guide':return web.FileResponse(WEB/'guide.html')
+    if request.method == 'POST' and request.path == '/api/apks':
+        # Upstream uses the request authority in the URL sent to headsets.
+        url = URL.build(scheme=request.scheme, authority=request.host)
+        try:
+            loopback = ip_address(url.host).is_loopback
+        except ValueError:
+            loopback = url.host == 'localhost'
+        if loopback:
+            addresses = upstream.get_local_ip_addresses()
+            if len(addresses) == 1:
+                request = request.clone(host=url.with_host(addresses[0]).authority)
     return await handler(request)
 
 def create_app():
