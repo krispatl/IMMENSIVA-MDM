@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  document.querySelectorAll('[data-task]').forEach(b=>b.addEventListener('click',()=>showTask(b.dataset.task)));
  id('venueDevices').addEventListener('click',()=>id('tabDevices').click());
  id('venueRooms').addEventListener('click',()=>id('btnManageGroups').click());
- function useJeru(){document.body.dataset.customApp='false';showTask('launch');id('operatorApp').value='com.fifthyang.lordlyrical';id('launchPkg').value=id('operatorApp').value;id('launchPkg').dispatchEvent(new Event('input',{bubbles:true}));}
+ function useJeru(){document.body.dataset.customApp='false';showTask('launch');id('operatorApp').value='com.fifthyang.lordlyrical.offline';id('launchPkg').value=id('operatorApp').value;id('launchPkg').dispatchEvent(new Event('input',{bubbles:true}));}
  id('venueJeru').addEventListener('click',useJeru);
  id('operatorApp').addEventListener('change',()=>{document.body.dataset.customApp=String(!id('operatorApp').value);id('launchPkg').value=id('operatorApp').value;id('launchPkg').dispatchEvent(new Event('input',{bubbles:true}));if(!id('operatorApp').value)id('launchPkg').focus();});
  id('stepConnect').addEventListener('click',()=>{id('connectionHelp').open=!id('connectionHelp').open;});
