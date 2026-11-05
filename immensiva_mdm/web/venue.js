@@ -25,7 +25,12 @@ document.addEventListener('DOMContentLoaded',()=>{
  const label=document.createElement('label');label.htmlFor='launchPkg';label.className='input-label';label.textContent='Android app package';command('launch').querySelector('.cmd-body').prepend(label);
  const note=document.createElement('p');note.className='operator-inline-note';note.textContent='The app must already be installed. Ask your technician for the package name of another app.';id('launchPkg').after(note);
  const advanced=document.createElement('details');advanced.className='launch-advanced';const summary=document.createElement('summary');summary.textContent='Advanced app parameters';advanced.append(summary,id('launchExtra'));id('btnLaunch').before(advanced);
- id('launchPkg').addEventListener('input',()=>{document.body.dataset.customApp=String(id('launchPkg').value!=='com.fifthyang.lordlyrical');id('operatorApp').value=id('launchPkg').value==='com.fifthyang.lordlyrical'?'com.fifthyang.lordlyrical':'';});
+ id('launchPkg').addEventListener('input',()=>{
+  const pkg=id('launchPkg').value, picker=id('operatorApp');
+  const preset=Boolean(pkg)&&Array.from(picker.options).some(option=>option.value===pkg);
+  picker.value=preset?pkg:'';
+  document.body.dataset.customApp=String(!preset);
+ });
  document.querySelectorAll('.cmd-head').forEach(head=>{head.setAttribute('role','button');head.tabIndex=0;head.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();head.click();}});});
  const expanded=()=>document.querySelectorAll('.cmd-head').forEach(head=>head.setAttribute('aria-expanded',String(!head.parentElement.classList.contains('collapsed'))));
  new MutationObserver(expanded).observe(document.querySelector('.commands'),{subtree:true,attributes:true,attributeFilter:['class']});expanded();
