@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#122c30">
+  <title>IMMENSIVA · Live operations</title>
+  <link rel="stylesheet" href="/monitor-assets/monitor.css">
+  <script src="/monitor-assets/fleet-status.js" defer></script>
+  <script src="/monitor-assets/suite.js" defer></script>
+  <script src="/monitor-assets/monitor.js" defer></script>
+</head>
+<body>
+  <aside class="rail" aria-label="Workspace">
+    <a class="brand" href="/" aria-label="IMMENSIVA operations home">
+      <span class="brand-mark"><i></i><i></i><i></i><i></i></span>
+      <span>IMMENSIVA<small>VENUE OPERATIONS</small></span>
+    </a>
+    <div class="rail-label">WORKSPACE</div>
+    <a class="nav-link active" href="#overview" data-suite-tab="operate"><span data-icon="grid"></span><span>Operate</span></a>
+    <a class="nav-link" href="#prepare" data-suite-tab="prepare" hidden><span data-icon="play"></span><span>Prepare</span></a>
+    <a class="nav-link" href="#technician" data-suite-tab="technician" hidden><span data-icon="target"></span><span>Technician</span></a>
+    <a class="nav-link" href="#activity"><span data-icon="activity"></span><span>Activity</span></a>
+    <a class="nav-link" id="mdmConsole" target="_blank" rel="noopener"><span data-icon="headset"></span><span>MDM console</span><span data-icon="arrow"></span></a>
+    <div class="rail-footer"><i class="connection-dot" id="railDot"></i><div><span id="railStatus">Connecting to MDM</span><small>LOCAL OPERATOR PREVIEW</small></div></div>
+  </aside>
+
+  <main id="overview">
+    <header class="page-header">
+      <div><div class="eyebrow"><i class="live-dot"></i>LIVE OPERATIONS</div><h1>Room overview<span>.</span></h1><p>Your headsets, experiences and room. All in one place.</p></div>
+      <div class="header-tools"><a class="button primary" href="/heads-up" target="_blank" rel="noopener"><span data-icon="eye"></span>Open heads-up<span data-icon="arrow"></span></a><div class="header-meta"><span id="connection" class="pill neutral">Connecting</span><time id="wallClock">—</time><small>Venue PC · local connection</small></div></div>
+    </header>
+    <div id="message" class="notice" role="status" hidden><span data-icon="info"></span><span id="messageText"></span><button id="dismissMessage" class="icon-button" aria-label="Dismiss message"><span data-icon="close"></span></button></div>
+
+    <div id="operateView">
+    <section class="fleet-toolbar" aria-label="Fleet controls">
+      <div class="toolbar-caption"><span class="square-icon" data-icon="headset"></span><div><strong>Fleet controls</strong><small id="fleetScope">Waiting for connected headsets</small></div></div>
+      <div class="toolbar-actions">
+        <button id="blackoutAll" class="button dark" data-group="off"><span data-icon="dark"></span>Blackout all<span class="button-count" id="blackoutCount">0</span></button>
+        <button id="restoreAll" class="button restore" data-group="on"><span data-icon="sun"></span>Restore all</button>
+        <button id="stopAll" class="button stop" data-group="stop"><span data-icon="stop"></span>Stop all experiences</button>
+      </div>
+      <div class="home-menu" role="group" aria-labelledby="homeMenuTitle">
+        <div class="home-menu-caption"><span class="square-icon" data-icon="home"></span><div><strong id="homeMenuTitle">Home menu</strong><small id="homeMenuStatus" role="status">Single press · Connected headsets</small></div></div>
+        <div class="home-menu-actions">
+          <button class="button restore" data-home-menu="restore" aria-label="Enable Home menu for connected headsets" disabled>Enable</button>
+          <button class="button secondary" data-home-menu="lock" aria-label="Disable Home menu for connected headsets" disabled>Disable</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="metrics" aria-label="Fleet at a glance">
+      <div class="metric"><span class="metric-icon green" data-icon="signal"></span><div><span class="metric-label">Connected</span><strong id="online">—</strong><small id="fleetTotal">headsets online</small></div></div>
+      <div class="metric"><span class="metric-icon blue" data-icon="clock"></span><div><span class="metric-label">Sessions in progress</span><strong id="running">—</strong><small>operator timers running</small></div></div>
+      <div class="metric"><span class="metric-icon violet" data-icon="dark"></span><div><span class="metric-label">Blacked out</span><strong id="darkCount">—</strong><small>confirmed display state</small></div></div>
+      <div class="metric"><span class="metric-icon amber" data-icon="alert"></span><div><span class="metric-label">Needs attention</span><strong id="attention">—</strong><small>connection, battery or timer</small></div></div>
+    </section>
+
+    <div class="workspace">
+      <div class="room-column">
+        <section class="panel room-panel" aria-labelledby="roomTitle">
+          <div class="panel-heading"><div><div class="eyebrow">SPATIAL OVERVIEW</div><h2 id="roomTitle">Your room, live</h2></div><span class="pill success" id="positionCount">0 locating</span></div>
+          <div class="room-info"><span><span data-icon="map"></span><span id="boundaryLabel">Waiting for headset boundary</span></span><div class="room-actions"><button id="measureRoom" class="text-button" disabled><span data-icon="target"></span>Measure outline</button><button id="fitRoom" class="text-button"><span data-icon="fit"></span>Fit room</button></div></div>
+          <div id="roomMeasure" class="room-measure" hidden>
+            <p><strong>Walk the perimeter with one tracking headset.</strong> Hold it still over each corner, then capture the position. Capture corners in order around the room.</p>
+            <p id="measureStatus" role="status"></p>
+            <div class="timer-actions">
+              <button id="captureCorner" class="button primary">Capture corner</button>
+              <button id="undoCorner" class="button secondary">Undo corner</button>
+              <button id="saveOutline" class="button secondary">Save outline</button>
+              <button id="cancelMeasure" class="button text">Cancel</button>
+              <button id="restoreOutline" class="button text" hidden>Use PICO boundary</button>
+            </div>
+          </div>
+          <div class="map-surface">
+            <svg id="room" viewBox="0 0 1000 670" role="img" aria-label="Top-down room outline and headset positions"></svg>
+            <div id="mapEmpty" class="map-empty"><span class="empty-icon" data-icon="map"></span><h3>Bring your room into view</h3><p>Select a connected headset and choose<br><strong>Start locating</strong> to read its LBE map.</p></div>
+            <div class="map-corner"><i class="live-dot"></i><span id="mapSource">PICO LBE · global coordinates</span></div>
+          </div>
+          <div class="room-footer"><span><i class="legend-dot"></i>Live headset<i class="legend-dot stale"></i>Stale position<i class="legend-line"></i><span id="outlineLegend">PICO boundary</span></span><span id="roomDimensions">Metres · X / Z</span></div>
+          <div class="map-note"><span data-icon="info"></span><span id="mapNote">The headset's LBE boundary will appear here. Verify alignment against physical room markers before relying on positions.</span></div>
+        </section>
+
+        <section class="panel control-panel" aria-labelledby="selectedName">
+          <div class="panel-heading"><div class="selected-heading"><span class="selected-headset" data-icon="headset"></span><div><div class="eyebrow">HEADSET CONTROLS</div><h2 id="selectedName">Choose a headset</h2></div></div><span id="selectedStatus" class="pill neutral">No selection</span></div>
+          <p id="deviceMeta" class="device-meta">Select a headset card or a marker on the room map.</p>
+          <div id="details" hidden>
+            <div class="device-actions">
+              <button class="button secondary" data-action="view"><span data-icon="eye"></span>Live view<span data-icon="arrow"></span></button>
+              <button class="button dark" data-action="display_off"><span data-icon="dark"></span>Blackout</button>
+              <button class="button restore" data-action="display_on"><span data-icon="sun"></span>Restore display</button>
+              <button class="button stop" data-action="stop_experience"><span data-icon="stop"></span>Stop experience</button>
+            </div>
+            <div class="control-columns">
+              <div class="session-controls">
+                <h3><span data-icon="clock"></span>Session timer<span class="subtle-label">MANUAL</span></h3>
+                <div class="timer-fields"><label>Experience<select id="experience"></select></label><label>Minutes<input id="minutes" type="number" min="0.1" max="240" step="0.1" placeholder="Duration"></label></div>
+                <div class="timer-actions">
+                  <button class="button primary" data-action="start"><span data-icon="play"></span>Start timer</button>
+                  <button class="button compact secondary" data-action="pause" title="Pause timer" aria-label="Pause timer"><span data-icon="pause"></span></button>
+                  <button class="button compact secondary" data-action="resume" title="Resume timer" aria-label="Resume timer"><span data-icon="play"></span></button>
+                  <button class="button compact secondary" data-action="finish" title="Finish timer" aria-label="Finish timer"><span data-icon="check"></span></button>
+                  <button class="button compact secondary" data-action="reset" title="Reset timer" aria-label="Reset timer"><span data-icon="reset"></span></button>
+                </div>
+                <p class="helper">Start when participation begins. Timers persist across refreshes.</p>
+              </div>
+              <div class="location-controls">
+                <h3><span data-icon="pin"></span>Room positioning</h3><p id="trackingState">Position feed is off</p>
+                <div class="timer-actions"><button class="button secondary" data-action="track"><span data-icon="target"></span>Start locating</button><button class="button text" data-action="stop_tracking">Stop feed</button></div>
+                <p class="helper">Uses the separate headset service. Each feed runs for up to 30 minutes.</p>
+              </div>
+            </div>
+            <p class="control-footnote"><span data-icon="info"></span>Blackout changes the display only; audio may continue. Live view opens on this PC. Stop experience ends registered running experience apps.</p>
+          </div>
+        </section>
+      </div>
+
+      <section class="panel fleet-panel" aria-labelledby="fleetTitle">
+        <div class="panel-heading"><div><div class="eyebrow">DEVICE FLEET</div><h2 id="fleetTitle">Your headsets <span id="knownCount" class="count-label">0</span></h2></div><span data-icon="headset"></span></div>
+        <label class="search-field"><span data-icon="search"></span><input id="search" type="search" placeholder="Find a headset…" aria-label="Find a headset"></label>
+        <div class="fleet-filters" role="group" aria-label="Filter headsets"><button class="filter-chip selected" data-fleet="all" aria-pressed="true">All</button><button class="filter-chip" data-fleet="online" aria-pressed="false">Connected</button><button class="filter-chip" data-fleet="attention" aria-pressed="false">Needs attention</button></div>
+        <div id="fleet" class="fleet-cards"></div><p id="fleetEmpty" class="fleet-empty" hidden>No headsets match this view.</p>
+        <div class="fleet-footnote"><i class="live-dot"></i>Updates automatically from the MDM console</div>
+      </section>
+    </div>
+
+    </div>
+    <section id="prepareView" class="suite-view" aria-labelledby="prepareTitle" hidden>
+      <div class="suite-heading"><div class="eyebrow">BEFORE THE SESSION</div><h2 id="prepareTitle">Prepare the room</h2><p>Choose headsets first, then open an app, install an APK, or send files.</p></div>
+      <div class="suite-grid">
+        <section class="panel suite-panel">
+          <h3><span data-icon="headset"></span>Choose headsets</h3>
+          <label>Room<select id="prepareRoom"><option value="">Select individually</option></select></label>
+          <div id="prepareTargets" class="suite-targets"></div>
+          <p id="prepareCount" class="helper" role="status"></p>
+          <form id="roomGroupForm"><label>Room name<input id="roomGroupName" maxlength="48" required placeholder="e.g. Main room"></label><button class="button secondary">Save room selection</button></form>
+        </section>
+        <section class="panel suite-panel">
+          <h3><span data-icon="play"></span>Prepare selected headsets</h3>
+          <form id="prepareForm">
+            <label>Action<select id="prepareAction"><option value="launch">Open app</option><option value="install">Install APK</option><option value="files">Send files</option></select></label>
+            <label id="prepareAppField">Experience<select id="prepareApp"></select></label>
+            <label id="prepareApkField" hidden>APK file<input id="prepareApk" type="file" accept=".apk"></label>
+            <div id="prepareFilesField" hidden><label>Files<input id="prepareFiles" type="file" multiple></label><label>Destination folder<input id="prepareDestination" value="/sdcard/IMMENSIVA/content"></label></div>
+            <button id="prepareReview" class="button primary" disabled>Review targets</button>
+          </form>
+          <p class="helper">Open the app before starting the operator timer.</p>
+          <a class="button secondary" href="http://127.0.0.1:8811" target="_blank" rel="noopener">Open show launcher <span data-icon="arrow"></span></a>
+          <p id="prepareResult" role="status"></p>
+        </section>
+      </div>
+    </section>
+    <section id="technicianView" class="suite-view" aria-labelledby="technicianTitle" hidden>
+      <div class="suite-heading"><div class="eyebrow">VENUE SETUP</div><h2 id="technicianTitle">Technician</h2><p>Set up phones, durations, room calibration, and headset policy.</p></div>
+      <div class="suite-grid">
+        <section class="panel suite-panel"><h3><span data-icon="signal"></span>Connection and pairing</h3><p id="suiteHealth"></p><p id="suiteWifi"></p><a class="button primary" href="/touch-setup">Phone &amp; tablet pairing</a><a class="button secondary" id="suiteMdm" target="_blank" rel="noopener">Advanced MDM console <span data-icon="arrow"></span></a></section>
+        <section class="panel suite-panel"><h3><span data-icon="clock"></span>Default experience durations</h3><p class="helper">Enter minutes for each experience. Operators can adjust the duration per session.</p><form id="durationForm"><div id="durationFields" class="suite-durations"></div><button class="button primary">Save durations</button><p id="durationResult" role="status"></p></form></section>
+        <section class="panel suite-panel"><h3><span data-icon="map"></span>Room calibration</h3><p>Select a headset in Operate and start locating it. Once the map is available, use that headset to measure the room perimeter.</p><button id="suiteCalibrate" class="button secondary" disabled>Measure room outline</button></section>
+        <section class="panel suite-panel" id="suitePolicy"><h3><span data-icon="home"></span>Headset policy</h3><p>Enable single-press Home for debugging. Disable it again when ready for visitors.</p></section>
+      </div>
+    </section>
+    <section class="panel activity-panel" id="activity" aria-labelledby="activityTitle">
+      <div class="panel-heading"><div class="selected-heading"><span class="square-icon" data-icon="activity"></span><div><div class="eyebrow">RECENT EVENTS</div><h2 id="activityTitle">What’s happening</h2></div></div><div class="activity-filters" role="group" aria-label="Filter activity"><button class="filter-chip selected" data-filter="all" aria-pressed="true">All activity</button><button class="filter-chip" data-filter="problem" aria-pressed="false">Problems</button><button class="filter-chip" data-filter="session" aria-pressed="false">Sessions</button></div></div>
+      <div id="events" class="event-feed"></div>
+    </section>
+    <footer class="page-footer"><span>IMMENSIVA · ESPRONCEDA</span><span>Operator monitor preview · LBE alignment requires venue validation</span></footer>
+  </main>
+
+  <dialog id="stopDialog"><form method="dialog"><span class="dialog-symbol" data-icon="stop"></span><h2 id="stopDialogTitle">Stop experience?</h2><p id="stopDialogText"></p><div class="dialog-actions"><button class="button secondary" value="cancel">Keep running</button><button class="button stop" id="confirmStop" value="confirm">Stop experience</button></div></form></dialog>
+  <dialog id="prepareDialog"><form method="dialog"><h2 id="prepareDialogTitle">Review targets</h2><p id="prepareDialogText"></p><ul id="prepareDialogTargets"></ul><div class="dialog-actions"><button class="button secondary" value="cancel" autofocus>Cancel</button><button class="button primary" value="confirm">Send command</button></div></form></dialog>
+</body>
+</html>

@@ -2,6 +2,9 @@
 
 **ESPRONCEDA / IMMENSIVA headset management, powered by STYLY-MDM.**
 
+The portable **Venue Suite** combines MDM and Live Ops in a separate pilot package.
+See the [Venue Suite guide](docs/VENUE_SUITE.md) for its build and setup steps.
+
 Manage headsets, group them by room, install apps and transfer files. Built for ESPRONCEDA / IMMENSIVA using STYLY-MDM.
 
 > **Origin:** IMMENSIVA MDM is derived from [STYLY-MDM](https://github.com/styly-dev/STYLY-MDM), developed by STYLY, Inc., and adapted for ESPRONCEDA / IMMENSIVA. This repository is no longer linked to STYLY-MDM in GitHub's fork network; STYLY-MDM is the original upstream project.

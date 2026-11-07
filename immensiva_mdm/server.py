@@ -1,14 +1,42 @@
 """Brand and operator UX adapter; upstream device protocol stays unchanged."""
 from pathlib import Path
-import importlib.metadata, json
+from html import escape
+import importlib.metadata, json, os
 from ipaddress import ip_address
+import posixpath
 from aiohttp import web
 from yarl import URL
 import styly_mdm
 from styly_mdm import server as upstream
 
+from .catalog import PACKAGES
+
 WEB=Path(__file__).resolve().parent/'web'
 VERSION='1.1.0'
+
+
+def validate_headset_destination(destination):
+    """Android destinations use POSIX paths even when the MDM runs on Windows."""
+    text = destination.strip() if isinstance(destination, str) else ''
+    if not text:
+        return 'Destination path is required'
+    if '\x00' in text or '\\' in text:
+        return 'Destination path contains an invalid character'
+    if not text.startswith('/'):
+        return 'Destination must be an absolute path'
+    if '..' in text.split('/'):
+        return "Destination path must not contain '..'"
+    normalized = posixpath.normpath('/' + text.lstrip('/')).rstrip('/') + '/'
+    prefix = next((prefix for prefix in upstream.SHARED_STORAGE_PREFIXES if normalized.startswith(prefix)), None)
+    if prefix is None:
+        return 'Destination must be under shared storage (/sdcard or /storage/emulated/0)'
+    remainder = normalized[len(prefix):].strip('/')
+    if not remainder:
+        return 'Destination must be a subdirectory, not the shared-storage root'
+    first_directory = remainder.split('/', 1)[0].lower()
+    if first_directory in upstream.PROTECTED_TOPLEVEL_DIRS:
+        return f"Destination must not be inside the protected '{first_directory}' directory"
+    return None
 
 def console_html():
     source=(Path(styly_mdm.__file__).parent/'static/index.html').read_text(encoding='utf-8')
@@ -29,16 +57,33 @@ def console_html():
     source=source.replace('Filter devices by name…','Find by name, ID or IP…')
     # Use the existing authority-backed UI state; do not open a second admin socket.
     source=source.replace('function render() {','function render() {\n        document.dispatchEvent(new CustomEvent("venue:state", {detail:{devices:devices,selected:Array.from(selectedIds),groups:groups}}));',1)
-    source=source.replace('<div class="commands">',(WEB/'tasks.html').read_text(encoding='utf-8')+'<div class="commands">',1)
+    options = '\n'.join(f'<option value="{escape(package)}">{escape(name)}</option>' for package, name in PACKAGES.items())
+    tasks = (WEB/'tasks.html').read_text(encoding='utf-8').replace('{{EXPERIENCE_OPTIONS}}', options)
+    source=source.replace('<div class="commands">',tasks+'<div class="commands">',1)
     source=source.replace('</body>',(WEB/'operator-dialog.html').read_text(encoding='utf-8')+(WEB/'footer.html').read_text(encoding='utf-8')+'</body>')
     return source
 
 @web.middleware
 async def branding(request, handler):
+    instance = os.environ.get('IMMENSIVA_SUITE_INSTANCE')
+    local_authority = request.host.split(':', 1)[0] in {'localhost', '127.0.0.1'}
+    if instance and (request.path in {'/', '/guide', '/ws/admin'} or request.path.startswith('/api/')):
+        if request.remote not in {'127.0.0.1', '::1'}:
+            raise web.HTTPForbidden()
+        bridge = request.path in {'/api/apks', '/api/bundles'} and request.headers.get('X-Venue-Suite') == instance
+        if not local_authority and not bridge:
+            raise web.HTTPForbidden()
+        if request.method == 'POST' or request.path == '/ws/admin':
+            origin = request.headers.get('Origin')
+            if origin is not None and origin != 'http://' + request.host:
+                raise web.HTTPForbidden()
     if request.path=='/' and request.method in ('GET','HEAD'):
         return web.Response(text=console_html(),content_type='text/html',headers={'Cache-Control':'no-store'})
     if request.path=='/health':
-        return web.json_response(dict(product='IMMENSIVA MDM',version=VERSION,backend='STYLY-MDM',backendVersion=importlib.metadata.version('styly-mdm')))
+        payload = dict(product='IMMENSIVA MDM',version=VERSION,backend='STYLY-MDM',backendVersion=importlib.metadata.version('styly-mdm'))
+        if instance and local_authority and request.remote in {'127.0.0.1', '::1'}:
+            payload['instance'] = instance
+        return web.json_response(payload)
     if request.path=='/guide':return web.FileResponse(WEB/'guide.html')
     if request.method == 'POST' and request.path == '/api/apks':
         # Upstream uses the request authority in the URL sent to headsets.
@@ -54,6 +99,8 @@ async def branding(request, handler):
     return await handler(request)
 
 def create_app():
+    if os.name == 'nt':
+        upstream.validate_dest_path = validate_headset_destination
     app=_original_create_app()
     app.middlewares.insert(0,branding)
     app.router.add_static('/brand',WEB)

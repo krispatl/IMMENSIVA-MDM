@@ -11,3 +11,15 @@ __pycache__/
 *.apk
 device_registry.json
 local-config.json
+monitor-data/
+suite-data/
+monitor-tools/scrcpy*/
+monitor-tools/tobSettings.apk
+monitor-tools/classes/
+monitor-tools/dex/
+monitor-tools/*.keystore
+monitor-tools/video-check/
+monitor-tools/check-ui.js
+monitor-tools/*.idsig
+monitor-tools/*.zip
+monitor-tools/*.jar

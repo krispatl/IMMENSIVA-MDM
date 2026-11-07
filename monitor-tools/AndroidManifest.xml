@@ -1,0 +1,8 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="org.immensiva.monitorprobe">
+  <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="32"/>
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+  <queries><package android:name="com.pvr.tobservice"/></queries>
+  <application android:label="IMMENSIVA Position Monitor" android:hasCode="true">
+    <service android:name=".ProbeService" android:exported="true"/>
+  </application>
+</manifest>

@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IMMENSIVA · Heads-up</title>
+  <link rel="stylesheet" href="/monitor-assets/heads-up.css">
+  <script src="/monitor-assets/fleet-status.js" defer></script>
+  <script src="/monitor-assets/heads-up.js" defer></script>
+</head>
+<body>
+  <header>
+    <div><p class="eyebrow">IMMENSIVA / LIVE OPERATIONS</p><h1>Headset status</h1></div>
+    <div class="header-actions"><span id="connection">Connecting</span><a href="/">Operator controls</a><a href="/touch-setup">Phone &amp; tablet</a><button id="fullscreen">Full screen</button></div>
+  </header>
+  <section class="summary" aria-label="Fleet summary">
+    <div><strong id="connected">—</strong><span>Connected</span></div>
+    <div><strong id="playing">—</strong><span>Experience open</span></div>
+    <div class="warning"><strong id="low">—</strong><span>Low battery</span></div>
+    <div><strong id="dark">—</strong><span>Blacked out</span></div>
+    <div><strong id="offline">—</strong><span>Offline</span></div>
+  </section>
+  <main id="fleet" aria-label="Headset fleet"></main>
+  <footer>Experience names come from the headset’s foreground app. Session timers are operator estimates.</footer>
+</body>
+</html>

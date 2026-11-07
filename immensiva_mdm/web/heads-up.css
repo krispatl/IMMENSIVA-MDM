@@ -1,0 +1,72 @@
+:root {
+  color-scheme: dark;
+  font: 16px/1.35 "Segoe UI", system-ui, sans-serif;
+  background: #101e22;
+  color: #f4faf9;
+}
+* { box-sizing: border-box; }
+body { margin: 0; padding: clamp(16px, 2vw, 36px); }
+header, .header-actions, .card-heading, .battery, .app { display: flex; align-items: center; gap: 12px; }
+header, .card-heading { justify-content: space-between; }
+header { flex-wrap: wrap; margin-bottom: 20px; }
+.header-actions { flex-wrap: wrap; }
+.eyebrow { font-size: .75rem; letter-spacing: .17em; color: #87d8bd; margin: 0 0 4px; }
+h1, h2, p { margin: 0; }
+h1 { font-size: clamp(1.7rem, 3vw, 2.5rem); letter-spacing: -.04em; }
+button, a { font: inherit; color: inherit; }
+.header-actions button, .header-actions a { padding: 9px 13px; background: #23383e; border: 1px solid #466067; border-radius: 8px; text-decoration: none; }
+.header-actions button { cursor: pointer; }
+:focus-visible { outline: 3px solid #8be5c6; outline-offset: 3px; }
+#connection, footer { color: #a7c2c2; font-size: .88rem; }
+.summary { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
+.summary div { display: flex; align-items: baseline; gap: 8px; padding: 9px 15px; background: #1a2c31; border-radius: 9px; }
+.summary strong { font-size: 1.4rem; font-variant-numeric: tabular-nums; }
+.summary span { color: #d0dfdd; }
+#fleet { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 234px), 1fr)); gap: 10px; }
+.headset { padding: 12px 14px; border: 1px solid #355054; border-radius: 12px; background: #1a2c31; min-width: 0; }
+.headset.is-offline { background: #192529; border-color: #394549; }
+.headset.is-dark { border-color: #ba9ce5; }
+.headset.is-low { border-color: #d4a46a; }
+h2 { font-size: 1rem; overflow-wrap: anywhere; }
+.status { font-size: .76rem; font-weight: 700; color: #99e5c8; }
+.is-offline .status { color: #c0cbcb; }
+.is-dark .status { color: #ddc7fb; }
+.battery { margin: 9px 0; color: #9fe5ca; }
+.battery svg { width: 49px; height: 30px; }
+.battery strong { font-size: 1.85rem; font-variant-numeric: tabular-nums; line-height: 1; }
+.warning, .is-low .battery { color: #ffd09a; }
+.is-offline .battery { color: #9bacad; }
+.battery small { color: #cbdddc; margin-left: auto; }
+.app { border-top: 1px solid #365054; padding-top: 9px; }
+.app svg { width: 28px; height: 28px; color: #8fd7bb; flex: none; }
+.app div { min-width: 0; }
+.app strong { display: block; overflow-wrap: anywhere; font-size: 1.06rem; }
+.app small { display: block; font-size: .75rem; color: #b0c7c5; overflow-wrap: anywhere; }
+footer { margin-top: 14px; }
+[hidden] { display: none !important; }
+.touch button, .touch input, .touch summary { min-height: 48px; font: inherit; }
+.touch button, .touch input {
+  padding: 9px 12px; border: 1px solid #466067; border-radius: 8px;
+  background: #23383e; color: inherit;
+}
+.touch button:disabled { opacity: .45; cursor: default; }
+.touch button.stop { background: #442d34; border-color: #8f626d; }
+.touch #pair { display: grid; gap: 12px; max-width: 28rem; padding: 16px; background: #1a2c31; border-radius: 12px; }
+.touch #pair p { color: #b0c7c5; }
+.touch-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 10px; }
+.touch-actions button { padding-inline: 5px; font-size: .88rem; }
+.fleet-controls { padding: 0 12px 10px; background: #1a2c31; border: 1px solid #355054; border-radius: 10px; margin-bottom: 12px; }
+.fleet-controls summary { padding-block: 12px; cursor: pointer; }
+.search { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 10px; }
+.search input { flex: 1; min-width: 0; }
+#result { position: sticky; top: 0; z-index: 1; background: #23383e; padding: 10px; margin: 0 0 10px; border-radius: 8px; }
+#result:empty { display: none; }
+#disconnect { margin-top: 16px; }
+.pairing-page { max-width: 34rem; margin: 4vh auto; text-align: center; }
+.pairing-page p, .pairing-page details { margin-top: 12px; }
+.pairing-page .qr { margin: 22px auto; width: min(100%, 310px); }
+.pairing-page .qr svg { width: 100%; height: auto; display: block; border-radius: 12px; }
+.pairing-page a { color: #99e5c8; }
+.pairing-page summary { cursor: pointer; }
+.pairing-note { color: #b0c7c5; font-size: .9rem; }
+.headset-details { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: .85rem; }

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IMMENSIVA · Venue controls</title>
+  <link rel="stylesheet" href="/monitor-assets/heads-up.css">
+  <script src="/monitor-assets/fleet-status.js" defer></script>
+  <script src="/monitor-assets/heads-up.js" defer></script>
+</head>
+<body class="touch">
+  <header>
+    <div><p class="eyebrow">IMMENSIVA</p><h1>Venue controls</h1></div>
+    <span id="connection">Connecting</span>
+  </header>
+  <form id="pair" hidden>
+    <label for="access-key">Venue access key</label>
+    <p>Find the key under Phone &amp; tablet on the venue PC’s heads-up display.</p>
+    <input id="access-key" type="password" autocomplete="off" autocapitalize="none" required>
+    <button type="submit">Connect</button>
+  </form>
+  <div id="controls" hidden>
+    <section class="summary" aria-label="Fleet summary">
+      <div><strong id="connected">—</strong><span>Online</span></div>
+      <div><strong id="playing">—</strong><span>Experience open</span></div>
+      <div class="warning"><strong id="low">—</strong><span>Low battery</span></div>
+      <div><strong id="dark">—</strong><span>Blacked out</span></div>
+      <div><strong id="offline">—</strong><span>Offline</span></div>
+    </section>
+    <details class="fleet-controls">
+      <summary>Fleet controls</summary>
+      <div class="touch-actions">
+        <button data-fleet-action="display_off">Blackout all</button>
+        <button data-fleet-action="display_on">Restore all</button>
+        <button class="stop" data-fleet-action="stop_experience">Stop all</button>
+      </div>
+    </details>
+    <label class="search">Find a headset <input id="search" type="search" placeholder="Headset name"></label>
+    <p id="result" role="status"></p>
+    <main id="fleet" aria-label="Headset fleet"></main>
+    <button id="disconnect">Disconnect this browser</button>
+  </div>
+</body>
+</html>
