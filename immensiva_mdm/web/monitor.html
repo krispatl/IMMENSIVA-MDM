@@ -28,7 +28,7 @@
   <main id="overview">
     <header class="page-header">
       <div><div class="eyebrow"><i class="live-dot"></i>LIVE OPERATIONS</div><h1>Room overview<span>.</span></h1><p>Your headsets, experiences and room. All in one place.</p></div>
-      <div class="header-tools"><a class="button primary" href="/heads-up" target="_blank" rel="noopener"><span data-icon="eye"></span>Open heads-up<span data-icon="arrow"></span></a><div class="header-meta"><span id="connection" class="pill neutral">Connecting</span><time id="wallClock">—</time><small>Venue PC · local connection</small></div></div>
+      <div class="header-tools"><a id="netsyncShortcut" class="pill neutral" href="#prepare" hidden>NetSync · Checking</a><a class="button primary" href="/heads-up" target="_blank" rel="noopener"><span data-icon="eye"></span>Open heads-up<span data-icon="arrow"></span></a><div class="header-meta"><span id="connection" class="pill neutral">Connecting</span><time id="wallClock">—</time><small>Venue PC · local connection</small></div></div>
     </header>
     <div id="message" class="notice" role="status" hidden><span data-icon="info"></span><span id="messageText"></span><button id="dismissMessage" class="icon-button" aria-label="Dismiss message"><span data-icon="close"></span></button></div>
 
@@ -127,6 +127,19 @@
     </div>
     <section id="prepareView" class="suite-view" aria-labelledby="prepareTitle" hidden>
       <div class="suite-heading"><div class="eyebrow">BEFORE THE SESSION</div><h2 id="prepareTitle">Prepare the room</h2><p>Choose headsets first, then open an app, install an APK, or send files.</p></div>
+      <section class="netsync-panel" aria-labelledby="netsyncTitle">
+        <div class="netsync-main">
+          <span class="netsync-mark" data-icon="signal"></span>
+          <div><div class="eyebrow">MULTIPLAYER NETWORK</div><h3 id="netsyncTitle">STYLY NetSync <span id="netsyncStatus" class="pill neutral" role="status">Checking</span></h3><p id="netsyncMessage">Checking this venue PC for a NetSync server…</p></div>
+        </div>
+        <div class="netsync-controls">
+          <button id="netsyncStart" class="button primary" type="button" hidden><span data-icon="play"></span>Start NetSync</button>
+          <button id="netsyncStop" class="button secondary" type="button" hidden><span data-icon="stop"></span>Stop NetSync</button>
+          <a class="button secondary" href="http://127.0.0.1:8811" target="_blank" rel="noopener">Open show launcher <span data-icon="arrow"></span></a>
+        </div>
+        <details class="netsync-diagnostics"><summary>Connection details</summary><p id="netsyncPorts"></p><p>For JERU timing and show cues, use the separate show launcher.</p></details>
+        <p id="netsyncError" class="netsync-error" role="alert" hidden></p>
+      </section>
       <div class="suite-grid">
         <section class="panel suite-panel">
           <h3><span data-icon="headset"></span>Choose headsets</h3>
@@ -145,7 +158,6 @@
             <button id="prepareReview" class="button primary" disabled>Review targets</button>
           </form>
           <p class="helper">Open the app before starting the operator timer.</p>
-          <a class="button secondary" href="http://127.0.0.1:8811" target="_blank" rel="noopener">Open show launcher <span data-icon="arrow"></span></a>
           <p id="prepareResult" role="status"></p>
         </section>
       </div>

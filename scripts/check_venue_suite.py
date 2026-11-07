@@ -45,6 +45,9 @@ async def verify(args):
 
         snapshot = await state()
         assert snapshot["suite"] and not snapshot["devices"], "Use a fresh disposable suite, with no other headsets."
+        async with client.get(args.desktop + "/api/suite/netsync") as response:
+            assert response.status == 200
+            assert (await response.json())["version"] == "0.17.5"
         first, second = ("fixture-" + uuid4().hex[:8] for _ in range(2))
 
         async def result(job, status):
@@ -119,7 +122,7 @@ async def verify(args):
                 assert response.status == 401
             async with client.get(touch + "/api/heads-up", headers=headers) as response:
                 assert response.status == 200
-            for path in ("/api/home-menu", "/api/suite/durations", "/api/suite/operation/launch", "/api/shutdown"):
+            for path in ("/api/home-menu", "/api/suite/durations", "/api/suite/operation/launch", "/api/suite/netsync", "/api/shutdown"):
                 async with client.post(touch + path, headers=headers, json={}) as response:
                     assert response.status == 404, (path, response.status)
             async with client.get(args.desktop + "/touch-setup") as response:

@@ -10,6 +10,10 @@
   let working = false;
   let reviewing = false;
   let durationsEdited = false;
+  let syncBusy = false;
+  let syncPoll = false;
+  let syncRevision = 0;
+  let syncState;
 
   function showView() {
     if (!initialized) return;
@@ -43,6 +47,69 @@
     return response.json();
   }
 
+  function renderNetSync(status) {
+    const [label, color, caption] = {
+      running: ['Running', 'success', 'Started by Venue Suite. Ready for NetSync experiences.'],
+      external: ['Existing server', 'success', 'NetSync is already running on this PC. Venue Suite can use it.'],
+      offline: ['Stopped', 'neutral', 'Start NetSync before opening a multiplayer experience.'],
+      unresponsive: ['Needs attention', 'warning', 'The Suite server is unresponsive. Stop it and start it again.'],
+      blocked: ['Needs attention', 'warning', 'Check the NetSync network settings.'],
+      missing: ['Unavailable', 'warning', 'NetSync is missing from this build.'],
+      unknown: ['Unavailable', 'neutral', 'Unable to check NetSync. Retrying…']
+    }[status.state];
+    const short = get('netsyncShortcut');
+    const badge = get('netsyncStatus');
+    const message = get('netsyncMessage');
+    const display = syncBusy ? 'Working…' : label;
+    short.className = badge.className = 'pill ' + color;
+    short.textContent = 'NetSync · ' + display;
+    if (badge.textContent !== display) badge.textContent = display;
+    const detail = status.detail || caption;
+    if (message.textContent !== detail) message.textContent = detail;
+    get('netsyncStart').hidden = status.state !== 'offline';
+    get('netsyncStop').hidden = !status.managed;
+    get('netsyncStart').disabled = get('netsyncStop').disabled = syncBusy;
+    const settings = status.ports;
+    get('netsyncPorts').textContent = settings?.control ?
+      `Bundled version ${status.version || 'unavailable'} · TCP ${settings.control}, ${settings.pub}, ${settings.transform} · REST ${settings['rest-api']} · Discovery ${settings['server-discovery']}` :
+      'Connection settings unavailable.';
+  }
+
+  async function refreshNetSync() {
+    if (syncBusy || syncPoll) return;
+    syncPoll = true;
+    const revision = syncRevision;
+    try {
+      const response = await fetch('/api/suite/netsync', {cache: 'no-store', signal: AbortSignal.timeout(4000)});
+      if (!response.ok) throw new Error('Status unavailable');
+      const status = await response.json();
+      if (revision === syncRevision) renderNetSync(syncState = status);
+    } catch {
+      if (revision === syncRevision) renderNetSync(syncState = {state: 'unknown'});
+    } finally {
+      syncPoll = false;
+    }
+  }
+
+  async function changeNetSync(action) {
+    if (syncBusy || !syncState) return;
+    if (action === 'stop' && !window.confirm('Stop the Suite NetSync server? Connected experiences may disconnect.')) return;
+    syncRevision++;
+    syncBusy = true;
+    get('netsyncError').hidden = true;
+    renderNetSync(syncState);
+    try {
+      syncState = await send('/api/suite/netsync', {action});
+    } catch (error) {
+      get('netsyncError').textContent = error.message;
+      get('netsyncError').hidden = false;
+    } finally {
+      syncBusy = false;
+      renderNetSync(syncState);
+      refreshNetSync();
+    }
+  }
+
   function init(state) {
     initialized = true;
     document.body.classList.add('venue-suite');
@@ -50,6 +117,11 @@
     document.querySelector('.rail-footer small').textContent = 'VENUE SUITE';
     document.querySelector('.page-footer span:last-child').textContent = 'Venue Suite · LBE alignment requires venue validation';
     document.querySelectorAll('[data-suite-tab]').forEach(link => { link.hidden = false; });
+    get('netsyncShortcut').hidden = false;
+    get('netsyncStart').onclick = () => changeNetSync('start');
+    get('netsyncStop').onclick = () => changeNetSync('stop');
+    refreshNetSync();
+    setInterval(refreshNetSync, 5000);
     get('suitePolicy').append(document.querySelector('.home-menu'));
     for (const [id, label] of Object.entries(state.packages)) {
       get('prepareApp').append(new Option(label, id));

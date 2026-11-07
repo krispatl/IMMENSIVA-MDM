@@ -63,6 +63,10 @@ def check_ports(touch):
                  ("Live Ops", "127.0.0.1", PORTS["monitor"], socket.SOCK_STREAM)]
     if touch:
         listeners.append(("venue Wi-Fi", touch["address"], PORTS["touch"], socket.SOCK_STREAM))
+    check_listeners(listeners)
+
+
+def check_listeners(listeners):
     for name, address, port, protocol in listeners:
         try:
             with socket.socket(socket.AF_INET, protocol) as listener:
@@ -99,6 +103,7 @@ def configure_touch(address, path):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--stop", action="store_true")
+    parser.add_argument("--netsync-action", choices=("start", "stop"))
     parser.add_argument("--no-browser", action="store_true")
     parser.add_argument("--enable-touch", metavar="IPV4")
     parser.add_argument("--configure-touch", action="store_true")
@@ -116,11 +121,18 @@ def main():
 
 
 def run(args):
+    from . import netsync
+
+    if args.netsync_action:
+        action = netsync.start if args.netsync_action == "start" else netsync.stop_managed
+        action()
+        return
     record_file = DATA / "processes.json"
     records = json.loads(record_file.read_text(encoding="utf-8")) if record_file.exists() else []
     if args.stop:
         stop(records)
         record_file.unlink(missing_ok=True)
+        netsync.stop_managed()
         return
 
     monitor_data = DATA / "live-ops"
@@ -143,8 +155,7 @@ def run(args):
         return
 
     if len(records) == 2 and all(healthy(record) for record in records):
-        if not args.no_browser:
-            webbrowser.open(f'http://127.0.0.1:{PORTS["monitor"]}/')
+        open_suite(args.no_browser, netsync.start)
         return
     stop(records)
     record_file.unlink(missing_ok=True)
@@ -182,7 +193,16 @@ def run(args):
         stop(records)
         record_file.unlink(missing_ok=True)
         raise
-    if not args.no_browser:
+    open_suite(args.no_browser, netsync.start)
+
+
+def open_suite(no_browser, start_netsync):
+    try:
+        start_netsync()
+    except (OSError, ValueError, RuntimeError, psutil.Error) as error:
+        # The operator dashboard still needs to be available to diagnose NetSync.
+        print(f"NetSync: {error}", file=sys.stderr)
+    if not no_browser:
         webbrowser.open(f'http://127.0.0.1:{PORTS["monitor"]}/')
 
 

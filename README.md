@@ -2,7 +2,7 @@
 
 **ESPRONCEDA / IMMENSIVA headset management, powered by STYLY-MDM.**
 
-The portable **Venue Suite** combines MDM and Live Ops in a separate pilot package.
+The portable **Venue Suite** combines MDM, Live Ops, and STYLY NetSync in one Windows package.
 See the [Venue Suite guide](docs/VENUE_SUITE.md) for its build and setup steps.
 
 Manage headsets, group them by room, install apps and transfer files. Built for ESPRONCEDA / IMMENSIVA using STYLY-MDM.

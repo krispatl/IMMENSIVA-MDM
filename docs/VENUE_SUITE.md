@@ -1,8 +1,16 @@
 # IMMENSIVA Venue Suite
 
-Double-click **Start Venue Suite.cmd** to open the operator dashboard. Use
-**Stop Venue Suite.cmd** to stop both services. If either service cannot start,
-the launcher reports its log path. Runtime data and logs are in `suite-data`.
+Double-click **Start Venue Suite.cmd** to start MDM, Live Ops, and the bundled
+STYLY NetSync server, then open the operator dashboard. If a NetSync
+service already owns the configured ports, the dashboard shows **Existing
+server** and uses the running service. Use **Stop Venue Suite.cmd** to stop
+services started by this copy of the Suite. Runtime data and logs are in
+`suite-data`.
+
+In **Prepare**, use the **STYLY NetSync** card to check the server and to start
+or stop the bundled copy. **Open show launcher** opens the separate JERU timing
+console. A NetSync startup problem appears in the card, with details in
+`suite-data/logs/netsync.log` when a process was started.
 
 ## Pilot
 
@@ -12,6 +20,15 @@ enter its previous MDM address and port. Use **Allow Venue Suite on Wi-Fi.cmd**
 as administrator if the Windows firewall blocks access. The rules are scoped to
 the package runtime, private networks, and the local subnet. Keep the ports on
 the venue LAN. The package uses a separate UDP discovery port, **17081**.
+
+The bundled NetSync server is version **0.17.5**. Use the same version in the
+Unity experience. It listens on TCP **5555**, **5556**, **5557**, **8800**, and
+TCP/UDP **49999** for discovery. The included firewall script allows those
+standard ports for this package on private networks. For an isolated test,
+create `suite-data/netsync-ports.json` while the Suite is stopped and override
+any of `control`, `pub`, `transform`, `rest-api`, and `server-discovery` with
+distinct port numbers. Configure test clients and firewall rules for that
+profile before testing from another device.
 
 - **Prepare** selects a room or individual headsets. Save the selection as a
   room, or review the targets before opening an experience, installing an APK,
@@ -48,10 +65,11 @@ outlines to the new suite data directory.
 
 ## Build from source
 
-Use the approved portable Python runtime and `monitor-tools` directory from an
-existing IMMENSIVA operator monitor. The build copies only the signed headset
-helpers and scrcpy from that directory. Its output contains the launchers, the
-runtime, and the software. Use a new output directory.
+Use the approved portable Python 3.11 Windows x64 runtime and `monitor-tools`
+directory from an existing IMMENSIVA operator monitor. The build adds the
+hash-pinned NetSync wheels and their licenses. The portable output runs offline.
+Use a new output directory and optionally pass `--netsync-wheelhouse` to use a
+local cache instead of downloading wheels during the build. [STYLY NetSync server](https://pypi.org/project/styly-netsync-server/0.17.5/)
 
 ```powershell
 python scripts/build_venue_suite.py --runtime "C:\path\to\runtime" --tools "C:\path\to\monitor-tools" --output "C:\path\to\IMMENSIVA-Venue-Suite" --zip

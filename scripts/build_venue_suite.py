@@ -3,6 +3,7 @@ import argparse
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 
 
 def main():
@@ -10,6 +11,7 @@ def main():
     parser.add_argument("--runtime", required=True, type=Path)
     parser.add_argument("--tools", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--netsync-wheelhouse", type=Path, help="Build from a local cache of the pinned wheels")
     parser.add_argument("--zip", action="store_true")
     args = parser.parse_args()
     root = Path(__file__).resolve().parent.parent
@@ -24,6 +26,17 @@ def main():
             parser.error(f"Missing approved headset helper: {name}")
     ignore = shutil.ignore_patterns("__pycache__", "*.pyc")
     shutil.copytree(args.runtime, output / "runtime", ignore=ignore)
+    runtime = output / "runtime"
+    install = [sys.executable, "-m", "pip", "install", "--disable-pip-version-check",
+               "--require-hashes", "--no-deps", "--only-binary=:all:", "--no-compile",
+               "--platform", "win_amd64", "--python-version", "3.11", "--implementation", "cp",
+               "--target", str(runtime / "netsync-packages"), "-r", str(root / "scripts/netsync-win311.lock")]
+    if args.netsync_wheelhouse:
+        install.extend(("--no-index", "--find-links", str(args.netsync_wheelhouse.resolve())))
+    subprocess.run(install, check=True)
+    pth = runtime / "python311._pth"
+    with pth.open("a", encoding="utf-8") as paths:
+        paths.write("\nnetsync-packages\n")
     shutil.copytree(root / "immensiva_mdm", output / "immensiva_mdm", ignore=ignore)
     tools = output / "monitor-tools"
     tools.mkdir()
@@ -47,6 +60,9 @@ def main():
         encoding="ascii")
     subprocess.run([str(output / "runtime/python.exe"), "-c", "import aiohttp, psutil, qrcode, styly_mdm"],
                    cwd=output, check=True)
+    subprocess.run([str(runtime / "python.exe"), "-c",
+                    "from importlib.metadata import version; import styly_netsync.server, styly_netsync.rest_bridge; "
+                    "assert version('styly-netsync-server') == '0.17.5'"], cwd=output, check=True)
     if args.zip:
         print(shutil.make_archive(str(output), "zip", output.parent, output.name))
     else:

@@ -578,6 +578,32 @@ def create_app(monitor, touch=None, touch_only=False):
             touch_enabled=bool(touch), touch_port=touch_port,
             packages=PACKAGES, now=time.time()), headers={"Cache-Control": "no-store"})
 
+    async def netsync_status(request):
+        from . import netsync
+
+        return web.json_response(await asyncio.to_thread(netsync.status),
+                                 headers={"Cache-Control": "no-store"})
+
+    async def netsync_action(request):
+        import subprocess
+
+        from .suite import json_object
+
+        data = await json_object(request)
+        action = data.get("action")
+        if action not in ("start", "stop"):
+            raise web.HTTPBadRequest(text="Choose Start or Stop NetSync.")
+        command = [sys.executable, "-m", "immensiva_mdm.suite_launcher", "--netsync-action", action]
+        try:
+            result = await asyncio.to_thread(subprocess.run, command, cwd=ROOT, capture_output=True,
+                                             encoding="utf-8", errors="replace", timeout=35,
+                                             creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0)
+        except (OSError, subprocess.TimeoutExpired):
+            raise web.HTTPServiceUnavailable(text="NetSync command failed. See suite-data/logs/netsync.log.") from None
+        if result.returncode:
+            raise web.HTTPConflict(text=result.stderr.strip() or "NetSync command failed.")
+        return await netsync_status(request)
+
     async def heads_up_state(request):
         monitor.heads_up_seen = time.monotonic()
         return web.json_response(dict(
@@ -800,6 +826,8 @@ def create_app(monitor, touch=None, touch_only=False):
         app.router.add_post("/api/room-outline", measure_room)
         app.router.add_post("/api/home-menu", home_menu_group)
         if monitor.suite:
+            app.router.add_get("/api/suite/netsync", netsync_status)
+            app.router.add_post("/api/suite/netsync", netsync_action)
             app.router.add_post("/api/suite/operation/{kind}", monitor.suite.operation)
             app.router.add_post("/api/suite/durations", monitor.suite.duration_settings)
             app.router.add_post("/api/suite/group", monitor.suite.room_group)
