@@ -23,6 +23,17 @@ from .catalog import PACKAGES
 
 ROOT = Path(__file__).resolve().parent.parent
 GROUP_COMMAND = ContextVar("group_command", default=False)
+# Temporary hold while the PICO storage issue is investigated. Keep stop actions available.
+DISABLED_ACTIONS = {
+    "track": "Room positioning is temporarily unavailable.",
+    "view": "Live view is temporarily unavailable.",
+}
+
+
+def require_action_enabled(action):
+    reason = DISABLED_ACTIONS.get(action)
+    if reason:
+        raise web.HTTPForbidden(text=json.dumps({"error": reason}), content_type="application/json")
 
 
 def decode_sample(text, run, pending):
@@ -380,6 +391,7 @@ class Monitor:
             self.tracking[device_id] = "Stopped"
 
     async def start_tracking(self, device_id):
+        require_action_enabled("track")
         address = await self.address(device_id)
         current = self.tasks.get(device_id)
         if current and not current.done():
@@ -410,6 +422,7 @@ class Monitor:
         self.event(device_id, "Position service stopped")
 
     async def view(self, device_id):
+        require_action_enabled("view")
         address = await self.address(device_id)
         async with self.viewer_lock:
             if self.viewer and self.viewer.returncode is None:
@@ -567,6 +580,7 @@ def create_app(monitor, touch=None, touch_only=False):
         return web.json_response(dict(
             connected=monitor.connected, devices=monitor.devices,
             sessions=monitor.sessions, poses=monitor.poses, tracking=monitor.tracking,
+            disabled_actions=DISABLED_ACTIONS,
             inventory=monitor.inventory, events=monitor.events,
             displays=monitor.displays,
             rooms=monitor.rooms,

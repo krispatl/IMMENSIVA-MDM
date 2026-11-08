@@ -7,6 +7,13 @@ server** and uses the running service. Use **Stop Venue Suite.cmd** to stop
 services started by this copy of the Suite. Runtime data and logs are in
 `suite-data`.
 
+**Temporary monitoring hold:** Live view, Start locating, and room-outline
+measurement are unavailable while the PICO storage issue is investigated.
+The server also rejects direct requests to start screen streaming or positioning.
+Stop active feeds and close scrcpy windows before replacing an existing copy;
+restart with the updated sources or a rebuilt portable package to apply the hold.
+See [monitor deployment details](MONITOR.md#temporary-monitoring-hold).
+
 In **Prepare**, use the **STYLY NetSync** card to check the server and to start
 or stop the bundled copy. **Open show launcher** opens the separate JERU timing
 console. A NetSync startup problem appears in the card, with details in
@@ -37,11 +44,10 @@ profile before testing from another device.
   console. Avoid running the same operation on the same headset in both views
   at once, since STYLY 0.6.0 reports results by headset and operation identity.
 - **Operate** shows foreground app, confirmed display state, battery, and
-  operator timer. Start the timer when the participant begins. Casting opens a
-  PC window. Position readings require authorized wireless ADB and a valid
-  shared LBE map. Verify alignment in the room before relying on the plot.
-- **Technician** saves default durations, measures the physical outline,
-  enables or disables single-press Home for the online pilot fleet, and opens
+  operator timer. Start the timer when the participant begins. Live view and
+  room positioning are temporarily unavailable; saved room outlines are retained.
+- **Technician** saves default durations, enables or disables single-press Home
+  for the online pilot fleet, and opens
   the phone pairing page. Home results reflect firmware feedback. Test with
   a controller before relying on the policy during a session.
 

@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import json
 from pathlib import Path
@@ -7,6 +8,7 @@ import unittest
 from unittest.mock import AsyncMock, patch
 
 from aiohttp.test_utils import TestClient, TestServer
+from aiohttp import web
 
 from immensiva_mdm.monitor import Monitor, create_app, decode_sample, equivalent_outline
 
@@ -47,6 +49,46 @@ class MonitorTests(unittest.IsolatedAsyncioTestCase):
             dict(device_id="offline", label="Offline", ip="192.0.2.3", status="offline"),
         ]
         self.monitor.address = AsyncMock(return_value="192.0.2.1:5555")
+
+    async def test_disabled_monitoring_methods_do_not_connect_or_start_processes(self):
+        self.monitor.command = AsyncMock()
+        with patch("immensiva_mdm.monitor.asyncio.create_subprocess_exec", new_callable=AsyncMock) as spawn:
+            for method in (self.monitor.start_tracking, self.monitor.view):
+                with self.subTest(method=method.__name__):
+                    with self.assertRaises(web.HTTPForbidden):
+                        await method("one")
+            spawn.assert_not_awaited()
+        self.monitor.address.assert_not_awaited()
+        self.monitor.command.assert_not_awaited()
+        self.assertEqual(self.monitor.tasks, {})
+        self.assertIsNone(self.monitor.viewer)
+
+    async def test_disabled_monitoring_api_rejects_requests_before_device_work(self):
+        for task in ("feed", "timers", "refresh_displays", "refresh_foreground"):
+            setattr(self.monitor, task, AsyncMock())
+        self.monitor.command = AsyncMock()
+        async with TestClient(TestServer(create_app(self.monitor))) as client:
+            snapshot = await (await client.get("/api/state")).json()
+            self.assertEqual(set(snapshot["disabled_actions"]), {"track", "view"})
+            for action in ("track", "view"):
+                with self.subTest(action=action):
+                    response = await client.post("/api/action", json={"device_id": "one", "action": action})
+                    self.assertEqual(response.status, 403)
+                    self.assertEqual(await response.json(), {"error": snapshot["disabled_actions"][action]})
+        self.monitor.address.assert_not_awaited()
+        self.monitor.command.assert_not_awaited()
+        self.assertEqual(self.monitor.tasks, {})
+        self.assertIsNone(self.monitor.viewer)
+
+    async def test_stop_feed_remains_available_during_monitoring_hold(self):
+        for task in ("feed", "timers", "refresh_displays", "refresh_foreground"):
+            setattr(self.monitor, task, AsyncMock())
+        collector = asyncio.create_task(asyncio.Event().wait())
+        self.monitor.tasks["one"] = collector
+        async with TestClient(TestServer(create_app(self.monitor))) as client:
+            response = await client.post("/api/action", json={"device_id": "one", "action": "stop_tracking"})
+            self.assertEqual(response.status, 200)
+            self.assertTrue(collector.cancelled())
 
     async def test_touch_listener_requires_key_and_limits_device_actions(self):
         config = {"address": "192.0.2.10", "key": "example-venue-access"}

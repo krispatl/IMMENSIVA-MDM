@@ -78,6 +78,10 @@ function online(device) {
   return state.connected && device.status === 'online';
 }
 
+function disabledActionReason(action) {
+  return state?.disabled_actions?.[action] || '';
+}
+
 function elapsed(session) {
   if (!session) return 0;
   const additional = session.status === 'running'
@@ -228,7 +232,9 @@ function renderCards() {
       card.progress.value = Math.min(session.duration, elapsed(session));
     }
     card.actions.querySelectorAll('button').forEach(button => {
-      button.disabled = bulkBusy || busyDevices.has(key) ||
+      const reason = disabledActionReason(button.dataset.cardAction);
+      if (button.dataset.cardAction === 'view') button.title = reason;
+      button.disabled = Boolean(reason) || bulkBusy || busyDevices.has(key) ||
         (button.dataset.cardAction !== 'display_on' && !online(device));
     });
   }
@@ -252,7 +258,9 @@ function renderDetails() {
   byId('selectedStatus').className = 'pill ' + color;
   const sample = state.poses[key];
   const age = sample ? Math.max(0, Math.round(state.now - sample.received)) : null;
-  if (freshPosition(device)) {
+  if (disabledActionReason('track')) {
+    byId('trackingState').textContent = disabledActionReason('track');
+  } else if (freshPosition(device)) {
     byId('trackingState').textContent = 'Receiving positions · last sample ' + age + 's ago';
   } else if (sample && state.tracking[key]?.startsWith('Receiving')) {
     byId('trackingState').textContent = 'Position updates stale · last sample ' + age + 's ago';
@@ -262,8 +270,10 @@ function renderDetails() {
   const session = state.sessions[key];
   document.querySelectorAll('[data-action]').forEach(button => {
     const action = button.dataset.action;
+    const reason = disabledActionReason(action);
+    button.title = reason;
     const onlineRequired = ['view', 'display_off', 'stop_experience', 'track', 'start'].includes(action);
-    button.disabled = bulkBusy || busyDevices.has(key) || (onlineRequired && !online(device)) ||
+    button.disabled = Boolean(reason) || bulkBusy || busyDevices.has(key) || (onlineRequired && !online(device)) ||
       (['pause', 'resume', 'finish', 'reset'].includes(action) && !session) ||
       (action === 'pause' && session?.status !== 'running') ||
       (action === 'resume' && session?.status !== 'paused');
@@ -319,7 +329,8 @@ function drawMap() {
   const extent = outline.length
     ? [...outline, ...(measurement?.points || []), ...fittedPositions]
     : points.map(([, sample]) => sample.pose);
-  byId('measureRoom').disabled = !room || !selected || Boolean(measurement);
+  byId('measureRoom').disabled = Boolean(disabledActionReason('track')) || !room || !selected || Boolean(measurement);
+  byId('measureRoom').title = disabledActionReason('track');
   byId('roomMeasure').hidden = !measurement;
   if (measurement) {
     const ready = Boolean(measurementSample());
@@ -454,7 +465,7 @@ function drawMap() {
   byId('outlineLegend').textContent = measured ? 'Measured outline' : 'PICO boundary';
   byId('mapSource').textContent = measured ? 'OPERATOR MEASURED · X / Z' :
     room ? 'PICO BOUNDARY FROM ' + label(room.source) : 'PICO GLOBAL COORDINATES';
-  byId('mapNote').textContent = (measured
+  byId('mapNote').textContent = disabledActionReason('track') || (measured
     ? 'Outline captured from headset positions on this LBE map.'
     : 'PICO play boundary. Measure the outline to match the physical perimeter.') +
     (beyondFrame ? ' ' + beyondFrame + ' markers beyond the view. Use Fit room to include them.' : '') +
@@ -561,6 +572,11 @@ async function request(path, data) {
 }
 
 async function runAction(deviceId, action) {
+  const reason = disabledActionReason(action);
+  if (reason) {
+    notify(reason);
+    return;
+  }
   if (!deviceId || bulkBusy || busyDevices.has(deviceId)) return;
   if (action === 'stop_experience' && !await confirmation(deviceId)) return;
   const packageName = byId('experience').value;
@@ -709,6 +725,7 @@ byId('fitRoom').onclick = () => {
   drawMap();
 };
 byId('measureRoom').onclick = () => {
+  if (disabledActionReason('track')) return;
   measurement = {fingerprint: currentFingerprint(), deviceId: selected, points: []};
   drawMap();
 };

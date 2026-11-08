@@ -1,5 +1,27 @@
 # IMMENSIVA operator monitor preview
 
+## Temporary monitoring hold
+
+Room positioning (**Start locating**) and screen streaming (**Live view**) are
+temporarily disabled while the PICO storage issue is investigated. The dashboard
+disables their buttons and room-outline measurement. The `track` and `view` API
+actions return HTTP 403 before connecting over ADB, installing the probe APK,
+starting its service, or launching scrcpy. Stop feed remains available.
+
+Before deploying this change, stop active position feeds and close scrcpy windows
+in the old instance. Stop Monitor or Venue Suite, replace it with the updated
+sources or a newly built portable package, and restart. A Git update alone does
+not stop an already running instance. A disconnected probe service expires after
+its existing 30-minute limit. This change does not uninstall existing APKs or
+delete headset files. Blackout/Restore still use the scrcpy display-power helper.
+
+The hold is defined by `DISABLED_ACTIONS` in `immensiva_mdm/monitor.py`; there is no
+operator toggle. Re-enable through a reviewed code change after investigation,
+including restoring the dashboard guidance. The implementation below is retained
+for that future change.
+
+## Starting the monitor
+
 Run Start Monitor.cmd and open http://127.0.0.1:7080 on the venue PC.
 Keep the existing MDM server running on port 7070. The monitor reads its admin
 feed and runs its own local web server, session store and position collectors.
@@ -18,11 +40,11 @@ experience team. Start the operator timer when participation begins. Pause,
 resume, finish and reset apply to that timer. The monitor does not infer the
 experience's playback state. Timers are stored in monitor-data/sessions.json.
 
-Live view opens a separate scrcpy viewing window on the PC. The viewer has
-control and audio disabled. Opening another headset replaces the current viewer.
+When enabled, Live view opens a separate scrcpy viewing window on the PC. The
+viewer has control and audio disabled. Opening another headset replaces the current viewer.
 Close that window to stop casting. Wireless ADB must be enabled and authorized.
 
-Start locating installs org.immensiva.monitorprobe, a separate Android
+When enabled, Start locating installs org.immensiva.monitorprobe, a separate Android
 foreground service. It binds to the installed PICO Enterprise service, reads
 HMD_POSITION_AND_ORIENTATION and LARGESPACE_MAP_INFO, and reports through ADB
 logcat at two samples per second. Unity experience packages are not modified.
@@ -35,7 +57,7 @@ get_large_space_bounds_info API and saves it with the map fingerprint.
 This boundary is a play-area outline. Room dimensions and area are approximate.
 Samples older than four seconds are marked stale. The room stays framed on the
 outline as headsets move. Fit room includes the current marker positions.
-To record a physical outline, start locating one headset, select it, then
+When positioning is enabled, start locating one headset and select it, then
 choose Measure outline. Capture at least three corners in perimeter order with
 the same headset and save. The monitor stores the measured outline for that
 LBE map. Use PICO boundary restores the headset-reported outline.
