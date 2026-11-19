@@ -644,8 +644,10 @@ async function runHomeMenu(mode) {
   homeMenuPending = mode;
   render();
   try {
-    state.home_menu = await request('/api/home-menu', {mode});
-    notify(homeMenuSummary(state.home_menu) + '. See Activity for details.');
+    const result = await request('/api/home-menu', {mode});
+    // Polling can replace state while the request is pending.
+    state.home_menu = result;
+    notify(homeMenuSummary(result) + '. See Activity for details.');
   } catch (error) {
     notify(error.message);
   } finally {
