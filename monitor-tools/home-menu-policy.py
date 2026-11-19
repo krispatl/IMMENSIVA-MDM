@@ -18,7 +18,8 @@ def adb(*args, timeout=12):
     result = subprocess.run([str(ADB), *args], capture_output=True, text=True,
                             timeout=timeout, encoding="utf-8", errors="replace")
     if result.returncode:
-        raise RuntimeError(result.stderr.strip() or result.stdout.strip())
+        raise RuntimeError(result.stderr.strip() or result.stdout.strip()
+                           or f"ADB command failed with exit code {result.returncode}")
     return result.stdout.strip()
 
 
@@ -37,7 +38,7 @@ def apply(device, mode):
                          str(TOOLS / "home-lock.apk"), timeout=45)
             if "Success" not in output:
                 raise RuntimeError(output)
-        elif not adb(*target, "shell", "pm", "path", PACKAGE):
+        elif "package:" + PACKAGE not in adb(*target, "shell", "pm", "list", "packages", PACKAGE).splitlines():
             return label, "SKIPPED rollout helper is absent"
         request = uuid4().hex
         adb(*target, "shell", "am", "start-foreground-service", "-n", PACKAGE + "/.Check",
