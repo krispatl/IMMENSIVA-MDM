@@ -1,4 +1,5 @@
 const paths = {
+  record: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3" fill="currentColor"/>',
   headset: '<path d="M4 8h16l2 8a2 2 0 0 1-2 2h-4l-4-3-4 3H4a2 2 0 0 1-2-2l2-8Z"/><path d="m7 8 1-3h8l1 3M7 12h1m8 0h1"/>',
   home: '<path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V10Z"/><path d="M9 21v-7h6v7"/>',
   grid: '<rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/>',
@@ -29,6 +30,9 @@ const byId = id => document.getElementById(id);
 const svgNS = 'http://www.w3.org/2000/svg';
 let state = null;
 let selected = null;
+const recordingStates = new Map();
+let recordingLoading = false;
+let recordingRevision = 0;
 let fleetFilter = 'all';
 let eventFilter = 'all';
 let clockOffset = 0;
@@ -268,16 +272,29 @@ function renderDetails() {
     byId('trackingState').textContent = state.tracking[key] || 'Position feed is off';
   }
   const session = state.sessions[key];
+  const recording = recordingStates.get(key);
+  const recordingState = online(device) && state.connected && recording && Date.now() - recording.at < 10000 ? recording.state : 'unknown';
+  byId('recordingHelp').textContent = state.recording_available
+    ? (recordingState === 'recording' ? 'Recording active' : recordingState === 'stopped' ? 'Recording stopped' : recording?.error || 'Checking recording state…') + ' · Videos stay on the headset.'
+    : 'Native recording tools are not installed on this PC. Ask your technician to add them.';
+  byId('browserHelp').textContent = state.browser_available
+    ? 'Enter an http:// or https:// URL. Opening the browser may interrupt the current experience.'
+    : 'Browser controls need the ADB tools on this PC. Ask your technician to add them.';
+  byId('headsetUrl').disabled = busyDevices.has(key);
   document.querySelectorAll('[data-action]').forEach(button => {
     const action = button.dataset.action;
     const reason = disabledActionReason(action);
     button.title = reason;
-    const onlineRequired = ['view', 'display_off', 'stop_experience', 'track', 'start'].includes(action);
+    const onlineRequired = ['view', 'record_start', 'record_stop', 'open_url', 'display_off', 'stop_experience', 'track', 'start'].includes(action);
     button.disabled = Boolean(reason) || bulkBusy || busyDevices.has(key) || (onlineRequired && !online(device)) ||
+      (action === 'record_start' && (!state.recording_available || recordingState !== 'stopped')) ||
+      (action === 'record_stop' && (!state.recording_available || recordingState !== 'recording')) ||
+      (action === 'open_url' && !state.browser_available) ||
       (['pause', 'resume', 'finish', 'reset'].includes(action) && !session) ||
       (action === 'pause' && session?.status !== 'running') ||
       (action === 'resume' && session?.status !== 'paused');
   });
+  queueMicrotask(checkRecordingState);
 }
 
 function createMapMarker(key) {
@@ -581,6 +598,12 @@ async function runAction(deviceId, action) {
   if (action === 'stop_experience' && !await confirmation(deviceId)) return;
   const packageName = byId('experience').value;
   const minutes = Number(byId('minutes').value);
+  const url = action === 'open_url' ? byId('headsetUrl').value.trim() : undefined;
+  if (action === 'open_url' && !/^https?:\/\//i.test(url)) {
+    byId('headsetUrl').setCustomValidity('Enter an http:// or https:// URL.');
+    byId('headsetUrl').reportValidity();
+    return;
+  }
   if (action === 'start' && (!Number.isFinite(minutes) || minutes <= 0 || minutes > 240)) {
     notify('Enter a duration between 0 and 240 minutes before starting the timer.');
     byId('minutes').focus();
@@ -589,15 +612,19 @@ async function runAction(deviceId, action) {
   if (action === 'start' && state.sessions[deviceId]?.status === 'running' &&
       !window.confirm('Replace the running timer on ' + label(deviceId) + '?')) return;
   busyDevices.add(deviceId);
+  if (['record_start', 'record_stop'].includes(action)) recordingRevision++;
   render();
-  const captions = {display_off: 'Applying blackout', display_on: 'Restoring display', stop_experience: 'Stopping experience', track: 'Starting position feed', view: 'Opening live view'};
+  const captions = {open_url: 'Opening headset browser', record_start: 'Starting recording', record_stop: 'Stopping recording', display_off: 'Applying blackout', display_on: 'Restoring display', stop_experience: 'Stopping experience', track: 'Starting position feed', view: 'Opening live view'};
   notify((captions[action] || 'Updating timer') + ' · ' + label(deviceId) + '…');
   try {
-    await request('/api/action', {device_id: deviceId, action, package: packageName, minutes});
+    const requestId = ['record_start', 'record_stop'].includes(action) ? crypto.randomUUID().replaceAll('-', '') : undefined;
+    const result = await request('/api/action', {device_id: deviceId, action, package: packageName, minutes, request_id: requestId, url});
+    if (requestId) recordingStates.set(deviceId, {state: result.state, at: Date.now()});
     if (action === 'start' && !state.suite) localStorage.setItem('duration:' + packageName, String(minutes));
-    const complete = {display_off: 'Blackout confirmed', display_on: 'Display restored', stop_experience: 'Experience stop check complete', track: 'Position feed requested', stop_tracking: 'Position feed stopped', view: 'Live viewer opened on this PC'};
-    notify((complete[action] || 'Timer updated') + ' · ' + label(deviceId));
+    const complete = {open_url: 'URL sent to the headset browser. Check the page in the headset', display_off: 'Blackout confirmed', display_on: 'Display restored', stop_experience: 'Experience stop check complete', track: 'Position feed requested', stop_tracking: 'Position feed stopped', view: 'Live viewer opened on this PC'};
+    notify((result.message || complete[action] || 'Timer updated') + ' · ' + label(deviceId));
   } catch (error) {
+    if (['record_start', 'record_stop'].includes(action)) recordingStates.delete(deviceId);
     notify(label(deviceId) + ' · ' + error.message);
   } finally {
     busyDevices.delete(deviceId);
@@ -676,6 +703,23 @@ function syncTimerSelection() {
   const current = device && window.fleetStatus.status(state, device).pkg;
   if (state.packages[current]) byId('experience').value = current;
   restoreDuration();
+}
+
+async function checkRecordingState() {
+  const key = selected, device = state?.devices.find(item => item.device_id === key);
+  if (document.hidden || !key || !device || !online(device) || !state.connected || !state.recording_available ||
+      recordingLoading || busyDevices.has(key) || Date.now() - (recordingStates.get(key)?.at || 0) < 5000) return;
+  recordingLoading = true;
+  const revision = recordingRevision;
+  try {
+    const result = await request('/api/action', {device_id: key, action: 'recording_status'});
+    if (revision === recordingRevision) recordingStates.set(key, {state: result.state, at: Date.now()});
+  } catch (error) {
+    if (revision === recordingRevision) recordingStates.set(key, {state: 'unknown', error: error.message, at: Date.now()});
+  } finally {
+    recordingLoading = false;
+    if (selected === key) renderDetails();
+  }
 }
 
 async function poll() {
@@ -771,7 +815,12 @@ async function applyOutline(points) {
 byId('saveOutline').onclick = () => applyOutline(measurement.points);
 byId('restoreOutline').onclick = () => applyOutline(null);
 document.querySelectorAll('[data-action]').forEach(button => {
-  button.onclick = () => runAction(selected, button.dataset.action);
+  if (button.dataset.action !== 'open_url') button.onclick = () => runAction(selected, button.dataset.action);
+});
+byId('headsetUrl').addEventListener('input', () => byId('headsetUrl').setCustomValidity(''));
+byId('browserForm').addEventListener('submit', event => {
+  event.preventDefault();
+  if (!document.querySelector('[data-action="open_url"]').disabled) runAction(selected, 'open_url');
 });
 document.querySelectorAll('[data-group]').forEach(button => {
   button.onclick = () => runGroup(button.dataset.group);

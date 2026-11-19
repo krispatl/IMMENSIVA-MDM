@@ -87,10 +87,18 @@
           <div id="details" hidden>
             <div class="device-actions">
               <button class="button secondary" data-action="view" disabled title="Live view is temporarily unavailable."><span data-icon="eye"></span>Live view<span data-icon="arrow"></span></button>
+              <button class="button secondary" data-action="record_start" disabled><span data-icon="record"></span>Start recording</button>
+              <button class="button secondary" data-action="record_stop" disabled><span data-icon="stop"></span>Stop recording</button>
               <button class="button dark" data-action="display_off"><span data-icon="dark"></span>Blackout</button>
               <button class="button restore" data-action="display_on"><span data-icon="sun"></span>Restore display</button>
               <button class="button stop" data-action="stop_experience"><span data-icon="stop"></span>Stop experience</button>
             </div>
+              <p class="helper" id="recordingHelp" role="status">Checking recording state…</p>
+            <form id="browserForm" class="browser-controls" aria-label="Headset browser">
+              <label for="headsetUrl">Open a website</label>
+              <div class="browser-fields"><input id="headsetUrl" type="url" required maxlength="4096" placeholder="https://example.com" autocomplete="url" autocapitalize="none" spellcheck="false" aria-describedby="browserHelp"><button class="button secondary" data-action="open_url" type="submit" disabled>Open URL on headset</button></div>
+              <p class="helper" id="browserHelp">Opening the browser may interrupt the current experience.</p>
+            </form>
             <div class="control-columns">
               <div class="session-controls">
                 <h3><span data-icon="clock"></span>Session timer<span class="subtle-label">MANUAL</span></h3>

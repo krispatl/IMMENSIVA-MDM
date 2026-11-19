@@ -30,6 +30,15 @@ select the headset and click Stop feed. Services also expire after 30 minutes.
 
 ## Operation
 
+**Start recording** or **Stop recording** triggers the selected headset's native recorder.
+Videos stay on the headset. The controls check native recording state before acting.
+This separate action does not enable Live view or positioning. See
+[recording setup](SCREEN_RECORDING.md) for the optional helper and pilot checks.
+
+**Open a website** opens an HTTP/HTTPS URL in the selected headset's browser.
+It uses authorized ADB without installing an APK. Opening the browser may
+interrupt the current experience; see [browser control](BROWSER_CONTROL.md).
+
 Open heads-up opens a read-only fleet window with large battery indicators,
 foreground app names, connection and blackout status, and session timers.
 Use Full screen for a dedicated operator display. Foreground app checks run

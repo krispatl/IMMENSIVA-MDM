@@ -10,6 +10,8 @@ import styly_mdm
 from styly_mdm import server as upstream
 
 from .catalog import PACKAGES
+from .recording import PicoRecorder
+from .browser import HeadsetBrowser
 
 WEB=Path(__file__).resolve().parent/'web'
 VERSION='1.1.0'
@@ -104,6 +106,60 @@ def create_app():
     app=_original_create_app()
     app.middlewares.insert(0,branding)
     app.router.add_static('/brand',WEB)
+    recorder = PicoRecorder(WEB.parent.parent / 'monitor-tools')
+    headset_browser = HeadsetBrowser(WEB.parent.parent / 'monitor-tools')
+
+    async def recording(request):
+        if request.method == 'GET':
+            if 'device_id' not in request.query:
+                return web.json_response({'available': recorder.available}, headers={'Cache-Control': 'no-store'})
+            device = upstream.devices.get(request.query['device_id'])
+            if not device:
+                return web.json_response({'error': 'Headset is offline or unknown.'}, status=409)
+            try:
+                return web.json_response(await recorder.state(dict(device)), headers={'Cache-Control': 'no-store'})
+            except (ValueError, RuntimeError, OSError, TimeoutError) as error:
+                return web.json_response({'state': 'unknown', 'error': str(error) or 'Recording state timed out.'}, status=400,
+                                         headers={'Cache-Control': 'no-store'})
+        if request.content_type != 'application/json':
+            raise web.HTTPUnsupportedMediaType()
+        if request.headers.get('Origin', request.scheme + '://' + request.host) != request.scheme + '://' + request.host:
+            raise web.HTTPForbidden()
+        try:
+            data = await request.json()
+            if not isinstance(data, dict) or not isinstance(data.get('device_id'), str):
+                raise ValueError('Select one online headset.')
+            device = upstream.devices.get(data['device_id'])
+            if not device:
+                return web.json_response({'error': 'Headset is offline or unknown.'}, status=409)
+            result = await recorder.set_state(dict(device), data.get('action'), data.get('request_id'))
+            return web.json_response(result)
+        except (ValueError, RuntimeError, OSError, TimeoutError) as error:
+            return web.json_response({'error': str(error) or 'Recording request timed out.'}, status=400)
+
+    app.router.add_get('/api/screen-recording', recording)
+    app.router.add_post('/api/screen-recording', recording)
+
+    async def open_url(request):
+        if request.method == 'GET':
+            return web.json_response({'available': headset_browser.available}, headers={'Cache-Control': 'no-store'})
+        if request.content_type != 'application/json':
+            raise web.HTTPUnsupportedMediaType()
+        if request.headers.get('Origin', request.scheme + '://' + request.host) != request.scheme + '://' + request.host:
+            raise web.HTTPForbidden()
+        try:
+            data = await request.json()
+            if not isinstance(data, dict) or not isinstance(data.get('device_id'), str):
+                raise ValueError('Select one online headset.')
+            device = upstream.devices.get(data['device_id'])
+            if not device:
+                return web.json_response({'error': 'Headset is offline or unknown.'}, status=409)
+            return web.json_response(await headset_browser.open_url(dict(device), data.get('url')))
+        except (ValueError, RuntimeError, OSError, TimeoutError) as error:
+            return web.json_response({'error': str(error) or 'Browser request timed out.'}, status=400)
+
+    app.router.add_get('/api/open-url', open_url)
+    app.router.add_post('/api/open-url', open_url)
     return app
 
 _original_create_app=upstream.create_app

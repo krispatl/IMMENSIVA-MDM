@@ -31,6 +31,10 @@ def main():
     shutil.copy2(root / "monitor-tools/monitor-probe.apk", tools)
     shutil.copy2(root / "monitor-tools/display-control.jar", tools)
     shutil.copy2(root / "monitor-tools/home-menu-policy.py", tools)
+    if (root / "monitor-tools/screen-recording.apk").is_file():
+        shutil.copy2(root / "monitor-tools/screen-recording.apk", tools)
+    shutil.copy2(root / "docs/SCREEN_RECORDING.md", args.output / "SCREEN_RECORDING.md")
+    shutil.copy2(root / "docs/BROWSER_CONTROL.md", args.output / "BROWSER_CONTROL.md")
     if args.home_lock_apk:
         shutil.copy2(args.home_lock_apk, tools / "home-lock.apk")
     shutil.copytree(root / "monitor-tools/scrcpy-win64-v5.0.1",
