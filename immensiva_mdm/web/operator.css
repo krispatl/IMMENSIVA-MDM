@@ -8,5 +8,6 @@
 .zones{overflow:visible;flex:none}.actions{display:block}.commands{flex:none;overflow:visible}.operator-task-tabs{width:100%}body[data-operator-task="launch"] [data-cmd="launch"]>.cmd-head{display:none}body[data-custom-app="false"] [data-cmd="launch"] .input-label,body[data-custom-app="false"] #launchPkg,body[data-custom-app="false"] .operator-inline-note{display:none}.selbox:focus-visible{outline:2px solid #a32564;outline-offset:3px}
 
 #operatorConfirm{position:fixed;inset:0;margin:auto;max-height:90vh;overflow:auto}
+#operatorBrowser input{display:block;width:100%;box-sizing:border-box;margin-bottom:12px}#operatorBrowser .btn{width:100%}
 
 @media(max-width:600px){.dev-head{display:none}.dev-row{grid-template-columns:28px minmax(0,1fr) minmax(0,1fr)!important;gap:8px 10px;padding:16px 12px}.dev-row>.selbox{grid-column:1;grid-row:1/4}.dev-cell{grid-column:2/-1;min-width:0}.dev-status{grid-column:2;font-size:12px}.dev-battery{grid-column:3;font-size:12px}.dev-task{grid-column:2/-1}.dev-sub{overflow-wrap:anywhere;font-size:10px}.dev-toolbar{flex-wrap:wrap;gap:10px}.dev-search-input{min-width:0;width:100%}.seg{flex-wrap:wrap}.dev-label-row{flex-wrap:wrap}}

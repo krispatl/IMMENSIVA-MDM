@@ -47,6 +47,10 @@ def main():
         else:
             shutil.copy2(source, tools / name)
     shutil.copy2(root / "monitor-tools/home-menu-policy.py", tools)
+    if (args.tools / "screen-recording.apk").is_file():
+        shutil.copy2(args.tools / "screen-recording.apk", tools)
+    shutil.copy2(root / "docs/SCREEN_RECORDING.md", output / "SCREEN_RECORDING.md")
+    shutil.copy2(root / "docs/BROWSER_CONTROL.md", output / "BROWSER_CONTROL.md")
     shutil.copy2(root / "docs/VENUE_SUITE.md", output / "README.md")
     shutil.copy2(root / "LICENSE", output)
     shutil.copy2(root / "NOTICE", output)

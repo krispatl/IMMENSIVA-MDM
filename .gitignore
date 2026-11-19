@@ -23,3 +23,4 @@ monitor-tools/check-ui.js
 monitor-tools/*.idsig
 monitor-tools/*.zip
 monitor-tools/*.jar
+monitor-tools/recording-build/

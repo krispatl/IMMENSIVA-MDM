@@ -32,6 +32,15 @@ Manage headsets, group them by room, install apps and transfer files. Built for 
 
 The guide is also available from **Operator guide** in the console (`/guide`).
 
+**PICO native recording:** select one online headset → **Screen recording** →
+**Start recording** or **Stop recording**. Videos stay on the headset. This optional control
+requires the recording helper and authorized wireless ADB; see
+[setup and validation](docs/SCREEN_RECORDING.md).
+
+**Open a website in a headset:** select one online headset → **Open URL** → enter
+an HTTP/HTTPS address → **Open URL on headset**. Uses authorized wireless ADB and
+the headset's browser; no extra APK is needed. See [browser setup](docs/BROWSER_CONTROL.md).
+
 ![Operator guide](docs/images/guide.jpg)
 
 ### If a headset does not appear

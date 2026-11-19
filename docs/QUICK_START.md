@@ -28,6 +28,13 @@ For another app, choose **Another app…** and enter the package name supplied b
 
 Choose **Install app**, select the `.apk` file supplied by your technician, then **Install to Selected**. Review the headset list and confirm. Wait for each installation result before opening the app.
 
+## Open a website
+
+To open a website, select **one online headset**, choose **Open URL**, enter an
+HTTP/HTTPS address and click **Open URL on headset**. This uses authorized
+wireless ADB and can interrupt the current experience. No extra headset APK is
+required; see [browser setup](BROWSER_CONTROL.md).
+
 ## End of session
 
 Close the show in its launcher. Use **Stop IMMENSIVA MDM.cmd** when finished with device management. Closing the browser does not stop the server. Keep the `MDM` folder when updating.

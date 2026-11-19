@@ -1,15 +1,20 @@
 document.addEventListener('DOMContentLoaded',()=>{
  const id=n=>document.getElementById(n),command=n=>document.querySelector(`[data-cmd="${n}"]`);
  let state={devices:[],selected:[],groups:{}},task='launch',pending=null,bypass=false;
+ let recordingAvailable=false,recordingBusy=false;
+ let recordingDevice='',recordingState='unknown',recordingChecked=0,recordingLoading=false,recordingError='',recordingRevision=0;
+ let browserAvailable=false,browserBusy=false;
  const deviceId=d=>d.device_id||d.serial_number||'',online=d=>d.status==='online';
- const commands={launch:['launch'],install:['install'],files:['push'],maintenance:['updateClient','sync','uninstall','startup','verifyApk','verifyDir','power','retire']};
- const hints={launch:'Choose an app, check your headsets, then open it.',install:'Choose the app file (.apk) supplied by your technician.',files:'Copy files to the selected headsets. Files with the same name are replaced.',maintenance:'For trained staff. Updates, deletion and power controls can interrupt a session.'};
+ const commands={launch:['launch'],install:['install'],files:['push'],browser:[],recording:[],maintenance:['updateClient','sync','uninstall','startup','verifyApk','verifyDir','power','retire']};
+ const hints={launch:'Choose an app, check your headsets, then open it.',install:'Choose the app file (.apk) supplied by your technician.',files:'Copy files to the selected headsets. Files with the same name are replaced.',browser:'Open a website in the selected headset’s browser.',recording:'Control the built-in PICO recorder on one selected headset.',maintenance:'For trained staff. Updates, deletion and power controls can interrupt a session.'};
  function showTask(name){task=name;document.body.dataset.operatorTask=name;
  document.querySelectorAll('[data-task]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.task===name)));
  document.querySelectorAll('[data-cmd]').forEach(s=>{s.hidden=!commands[name].includes(s.dataset.cmd);});
  id('operatorTaskHelp').textContent=hints[name];id('operatorAppPicker').hidden=name!=='launch';
- if(name!=='maintenance')command(commands[name][0]).classList.remove('collapsed');
- id('stepAction').querySelector('strong').textContent={launch:'Open',install:'Install',files:'Send',maintenance:'Maintain'}[name];}
+ id('operatorRecording').hidden=name!=='recording';
+ id('operatorBrowser').hidden=name!=='browser';
+ if(name!=='maintenance'&&commands[name].length)command(commands[name][0]).classList.remove('collapsed');
+ id('stepAction').querySelector('strong').textContent={launch:'Open',install:'Install',files:'Send',browser:'Browse',recording:'Record',maintenance:'Maintain'}[name];queueMicrotask(refresh);}
  document.querySelectorAll('[data-task]').forEach(b=>b.addEventListener('click',()=>showTask(b.dataset.task)));
  id('venueDevices').addEventListener('click',()=>id('tabDevices').click());
  id('venueRooms').addEventListener('click',()=>id('btnManageGroups').click());
@@ -18,7 +23,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  id('operatorApp').addEventListener('change',()=>{document.body.dataset.customApp=String(!id('operatorApp').value);id('launchPkg').value=id('operatorApp').value;id('launchPkg').dispatchEvent(new Event('input',{bubbles:true}));if(!id('operatorApp').value)id('launchPkg').focus();});
  id('stepConnect').addEventListener('click',()=>{id('connectionHelp').open=!id('connectionHelp').open;});
  id('stepSelect').addEventListener('click',()=>{id('tabDevices').click();id('devSearch').focus();});
- id('stepAction').addEventListener('click',()=>command(commands[task][0]).scrollIntoView({block:'nearest',behavior:'smooth'}));
+ id('stepAction').addEventListener('click',()=>(task==='recording'?id('operatorRecording'):task==='browser'?id('operatorBrowser'):command(commands[task][0])).scrollIntoView({block:'nearest',behavior:'smooth'}));
  if(!['127.0.0.1','localhost','::1'].includes(location.hostname))id('venueShow').hidden=true;
  const labels={launchPkg:'Android app package',launchExtra:'Optional app launch parameters',apkFile:'Android app file (.apk)',pushDest:'Destination folder on headsets',devSearch:'Find a headset'};
  Object.entries(labels).forEach(([key,label])=>id(key)?.setAttribute('aria-label',label));
@@ -42,6 +47,16 @@ document.addEventListener('DOMContentLoaded',()=>{
  id('fleetHeadline').textContent=!connected?'Console disconnected':!state.devices.length?'Connect your first headset':live.length+' headset'+(live.length===1?'':'s')+' online';
  id('fleetHint').textContent=!connected?'Controls are unavailable until the server reconnects.':!state.devices.length?'Open STYLY-MDM Client in the headset. Use the connection checklist below.':low.length?'Charge low-battery headsets before the next session.':off?'Wake offline headsets and check their connection.':'Choose the headsets for your next action.';
  const selected=state.devices.filter(d=>state.selected.includes(deviceId(d))),names=selected.map(d=>d.label||deviceId(d)),ready=selected.filter(online).length;
+ const recordTarget=connected&&selected.length===1&&ready===1?deviceId(selected[0]):'';
+ if(recordTarget!==recordingDevice){recordingDevice=recordTarget;recordingState='unknown';recordingChecked=0;recordingError='';}
+ const recordReady=recordTarget&&recordingAvailable&&!recordingBusy&&Date.now()-recordingChecked<10000;
+ id('btnRecordStart').disabled=!recordReady||recordingState!=='stopped';
+ id('btnRecordStop').disabled=!recordReady||recordingState!=='recording';
+ id('recordingState').textContent=!recordTarget?'Select one online PICO headset to check recording state.':
+   recordingState==='recording'?'Recording active on headset':recordingState==='stopped'?'Recording stopped':recordingError||'Checking recording state…';
+ queueMicrotask(checkRecordingState);
+ id('btnOpenUrl').disabled=!connected||!browserAvailable||browserBusy||selected.length!==1||ready!==1;
+ id('operatorUrl').disabled=browserBusy;
  id('operatorSelection').textContent=selected.length?`${ready} online selected · ${names.slice(0,3).join(', ')}${names.length>3?' + '+(names.length-3)+' more':''}${ready<selected.length?' · '+(selected.length-ready)+' offline will be skipped':''}`:'Select a room or headset on the left.';
  id('stepConnect').classList.toggle('step-complete',live.length>0);id('stepSelect').classList.toggle('step-complete',ready>0);
  document.querySelectorAll('#targetsBody .selbox').forEach(box=>{box.tabIndex=0;box.setAttribute('role','checkbox');box.setAttribute('aria-checked',String(box.classList.contains('on')));const d=state.devices.find(d=>deviceId(d)===box.dataset.id);box.setAttribute('aria-label',d?'Select headset '+(d.label||deviceId(d)):'Select visible headsets');});
@@ -55,6 +70,54 @@ document.addEventListener('DOMContentLoaded',()=>{
  id('devSearch').addEventListener('input',()=>queueMicrotask(refresh));
  id('devStatusFilter').addEventListener('click',()=>queueMicrotask(refresh));
  new MutationObserver(refresh).observe(id('connText'),{childList:true,subtree:true,characterData:true});
+ fetch('/api/open-url').then(response=>{if(!response.ok)throw new Error();return response.json();}).then(result=>{
+ browserAvailable=result.available;id('browserResult').textContent=result.available?'Wireless ADB must be enabled and authorized.':'Browser controls need the ADB tools on this PC. Ask your technician to add them.';refresh();
+ }).catch(()=>{id('browserResult').textContent='Could not check browser controls. Reload the page to try again.';});
+ id('operatorUrl').addEventListener('input',()=>id('operatorUrl').setCustomValidity(''));
+ id('operatorBrowser').addEventListener('submit',async event=>{
+ event.preventDefault();if(id('btnOpenUrl').disabled||browserBusy)return;
+ const url=id('operatorUrl').value.trim();
+ if(!/^https?:\/\//i.test(url)){id('operatorUrl').setCustomValidity('Enter an http:// or https:// URL.');id('operatorUrl').reportValidity();return;}
+ const targets=state.devices.filter(d=>state.selected.includes(deviceId(d)));if(targets.length!==1||!online(targets[0]))return;
+ const target=targets[0],name=target.label||deviceId(target);
+ browserBusy=true;refresh();id('browserResult').textContent='Opening headset browser · '+name+'…';
+ try{
+ const response=await fetch('/api/open-url',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({device_id:deviceId(target),url})});
+ const result=await response.json();if(!response.ok)throw new Error(result.error||'Browser request failed.');
+ id('browserResult').textContent=name+' · '+result.message;
+ }catch(error){id('browserResult').textContent=name+' · '+error.message;}
+ finally{browserBusy=false;refresh();}
+ });
+ fetch('/api/screen-recording').then(response=>{if(!response.ok)throw new Error();return response.json();}).then(result=>{
+ recordingAvailable=result.available;id('recordingResult').textContent=result.available?'Wireless ADB must be enabled and authorized.':'Recording tools are not installed on this PC. See the screen recording setup guide.';refresh();
+ }).catch(()=>{id('recordingResult').textContent='Could not check recording tools. Reload the page to try again.';});
+ async function checkRecordingState(){
+ if(task!=='recording'||document.hidden||!recordingAvailable||!recordingDevice||recordingBusy||recordingLoading||Date.now()-recordingChecked<5000)return;
+ const target=recordingDevice,revision=recordingRevision;recordingLoading=true;recordingChecked=Date.now();
+ try{
+ const response=await fetch('/api/screen-recording?device_id='+encodeURIComponent(target),{cache:'no-store'});
+ const result=await response.json();if(!response.ok)throw new Error(result.error||'Recording state unavailable.');
+ if(target===recordingDevice&&revision===recordingRevision){recordingState=result.state;recordingError='';}
+ }catch(error){if(target===recordingDevice&&revision===recordingRevision){recordingState='unknown';recordingError=error.message;}}
+ finally{recordingLoading=false;refresh();}
+ }
+ setInterval(()=>{if(task==='recording')refresh();},1500);
+ async function setRecording(action){
+ if(id(action==='start'?'btnRecordStart':'btnRecordStop').disabled||recordingBusy)return;
+ const targets=state.devices.filter(d=>state.selected.includes(deviceId(d)));if(targets.length!==1||!online(targets[0]))return;
+ const target=targets[0],name=target.label||deviceId(target);
+ const bytes=new Uint8Array(16);crypto.getRandomValues(bytes);const requestId=Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');
+ recordingBusy=true;recordingRevision++;refresh();id('recordingResult').textContent=(action==='start'?'Starting':'Stopping')+' recording · '+name+'…';
+ try{
+ const response=await fetch('/api/screen-recording',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({device_id:deviceId(target),action,request_id:requestId})});
+ const result=await response.json();if(!response.ok)throw new Error(result.error||'Recording request failed.');
+ id('recordingResult').textContent=name+' · '+result.message;
+ if(recordingDevice===deviceId(target)){recordingState=result.state;recordingChecked=Date.now();}
+ }catch(error){id('recordingResult').textContent=name+' · '+error.message;recordingState='unknown';recordingChecked=0;}
+ finally{recordingBusy=false;refresh();}
+ }
+ id('btnRecordStart').addEventListener('click',()=>setRecording('start'));
+ id('btnRecordStop').addEventListener('click',()=>setRecording('stop'));
  const dialog=id('operatorConfirm');function cancel(){pending=null;dialog.close();}
  id('operatorCancel').addEventListener('click',cancel);dialog.addEventListener('cancel',()=>{pending=null;});
  id('operatorSend').addEventListener('click',()=>{

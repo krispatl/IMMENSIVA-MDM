@@ -20,6 +20,8 @@ import uuid
 from aiohttp import ClientError, ClientSession, ClientTimeout, WSMsgType, web
 
 from .catalog import PACKAGES
+from .recording import PicoRecorder
+from .browser import HeadsetBrowser
 
 ROOT = Path(__file__).resolve().parent.parent
 GROUP_COMMAND = ContextVar("group_command", default=False)
@@ -84,6 +86,8 @@ class Monitor:
         self.data = data
         self.adb = adb
         self.scrcpy = scrcpy
+        self.recorder = PicoRecorder(scrcpy.parent.parent)
+        self.browser = HeadsetBrowser(scrcpy.parent.parent)
         self.upstream = upstream
         self.devices = []
         self.connected = False
@@ -581,6 +585,8 @@ def create_app(monitor, touch=None, touch_only=False):
             connected=monitor.connected, devices=monitor.devices,
             sessions=monitor.sessions, poses=monitor.poses, tracking=monitor.tracking,
             disabled_actions=DISABLED_ACTIONS,
+            recording_available=monitor.recorder.available,
+            browser_available=monitor.browser.available,
             inventory=monitor.inventory, events=monitor.events,
             displays=monitor.displays,
             rooms=monitor.rooms,
@@ -719,6 +725,15 @@ def create_app(monitor, touch=None, touch_only=False):
                     await monitor.stop_tracking(device_id)
                 elif name == "view":
                     await monitor.view(device_id)
+                elif name == "recording_status":
+                    return web.json_response(await monitor.recorder.state(monitor.device(device_id)))
+                elif name in {"record_start", "record_stop"}:
+                    result = await monitor.recorder.set_state(monitor.device(device_id), name.removeprefix("record_"), data.get("request_id"))
+                    monitor.event(device_id, result["message"])
+                    return web.json_response({"ok": True, **result})
+                elif name == "open_url":
+                    result = await monitor.browser.open_url(monitor.device(device_id), data.get("url"))
+                    monitor.event(device_id, result["message"])
                 elif name == "start":
                     monitor.device(device_id)
                     package = data.get("package")

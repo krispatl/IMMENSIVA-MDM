@@ -1,0 +1,10 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="org.immensiva.recording" android:versionCode="2" android:versionName="1.1">
+  <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="32"/>
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+  <queries><package android:name="com.pvr.tobservice"/><package android:name="com.bytedance.pico.screencapture"/></queries>
+  <application android:label="IMMENSIVA Recording Control" android:hasCode="true" android:allowBackup="false">
+    <service android:name=".RecordingService" android:exported="true"
+        android:permission="android.permission.DUMP"/>
+  </application>
+</manifest>

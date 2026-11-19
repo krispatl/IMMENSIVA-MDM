@@ -14,6 +14,14 @@ Stop active feeds and close scrcpy windows before replacing an existing copy;
 restart with the updated sources or a rebuilt portable package to apply the hold.
 See [monitor deployment details](MONITOR.md#temporary-monitoring-hold).
 
+The optional **Start recording** or **Stop recording** control triggers the headset's own
+recorder and saves videos there. It requires the separate recording helper;
+see [native recording setup](SCREEN_RECORDING.md).
+
+**Headset controls → Open a website** sends an HTTP/HTTPS address to the selected
+headset's browser using the bundled ADB tools. No extra APK is required.
+See [browser control](BROWSER_CONTROL.md).
+
 In **Prepare**, use the **STYLY NetSync** card to check the server and to start
 or stop the bundled copy. **Open show launcher** opens the separate JERU timing
 console. A NetSync startup problem appears in the card, with details in
