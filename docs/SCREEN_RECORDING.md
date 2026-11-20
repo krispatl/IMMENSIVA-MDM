@@ -1,12 +1,23 @@
 # PICO native screen recording
 
-Select one online PICO headset in MDM, choose **Screen recording**, then use
-**Start recording** or **Stop recording**. The same controls appear under
-**Headset controls** in Live Ops. Videos remain on the headset.
+Select one or more online PICO headsets in MDM, choose **Screen recording**, then
+use **Start recording** or **Stop recording**. The command applies to all selected
+online headsets; offline headsets are skipped. Progress and results are shown
+separately for each headset, and a failed headset does not stop the others.
+The selection is fixed when you click, so changing it during the batch does not
+add headsets to that command. Videos remain on each headset.
+In Live Ops, the same controls under **Headset controls** apply to the single
+headset selected in its details panel.
 
-The console reads native recording state every five seconds while the controls
-are visible. Start is enabled when stopped; Stop is enabled when recording.
-Both are disabled when state is unavailable. The active flag includes the
+The console refreshes each selected headset's native recording state while the
+controls are visible, with at least five seconds between checks and up to four
+checks at once. Start is enabled when at least one selected online headset is
+confirmed stopped; Stop is enabled when at least one is confirmed recording.
+A mixed selection enables both buttons. Both are disabled if no selected online
+headset has a known, fresh state, and while a command is running. A headset with
+an unavailable state does not block the other selected headsets; its command
+must still pass the server's native-state check or return an individual failure.
+The active flag includes the
 startup countdown; it does not verify saved-video integrity or playback.
 
 The helper rechecks state on the headset immediately before acting. Start while
@@ -53,6 +64,10 @@ helper, or issuing a command. The `org.immensiva.recording` service accepts only
 Enterprise `pbsRecord()` toggle once only when a change is needed. Persisted
 receipts prevent the same request being repeated after helper process restart.
 Commands are not automatically retried after a timeout or lost response.
+MDM sends up to four recording requests concurrently, each with a separate
+request ID. Each request independently verifies identity, reads native state,
+and confirms the requested result. Late status responses cannot overwrite the
+confirmed command result.
 
 The native ScreenCaptureService contains explicit start/stop commands and a
 status query, but those interfaces require PICO's signature/privileged
@@ -67,6 +82,17 @@ The helper entry point remains protected by `android.permission.DUMP`.
 The positioning/live-view holds and touch listener's allowlist remain in place.
 
 ## Validation
+
+UI regression tests cover Start and Stop across mixed-state selections, offline
+skipping, independent failures, unique request IDs, bounded concurrency, duplicate
+clicks, selection changes, stale status responses, and disconnect/reconnect checks.
+The batch controls use the existing version 1.1 helper; no new APK is required
+for this console update.
+
+The deployed MDM batch controls were also verified on ESPRONCEDA-04 and
+ESPRONCEDA-10 with one offline headset selected: Start confirmed both online
+headsets recording, then Stop confirmed both stopped. Each action reported two
+confirmed, zero failed, and one offline skipped. Both headsets were left stopped.
 
 On 20 November 2026, PICO 4 Ultra Enterprise with PUI 5.15.7 and native recorder
 1.0.4 (100004072) passed a physical pilot: Stop while stopped did nothing;

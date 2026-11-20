@@ -13,4 +13,4 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --test tests/test_home_menu_ui.cjs
+      - run: node --test tests/test_home_menu_ui.cjs tests/test_browser_ui.cjs tests/test_recording_ui.cjs

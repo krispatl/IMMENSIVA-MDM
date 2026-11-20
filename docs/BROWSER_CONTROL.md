@@ -1,8 +1,13 @@
-# Open a URL on a PICO headset
+# Open a URL on PICO headsets
 
-In the MDM console, select **one online headset**, choose **Open URL**, enter a
-complete `https://` or `http://` address, and press **Open URL on headset**.
-In Live Ops, the same form is under **Headset controls → Open a website**.
+In the MDM console, select **one or more online headsets**, choose **Open URL**,
+enter a complete `https://` or `http://` address, and press **Open URL on N headsets**
+(**Open URL on headset** for a single selection). Offline headsets are skipped.
+The console shows progress and a separate result for each headset; one failure
+does not stop the others. The target list and URL are fixed when you submit, so
+changing the selection during a batch does not send the URL to additional headsets.
+In Live Ops, the form under **Headset controls → Open a website** controls the
+single headset selected in its details panel.
 Opening the browser can interrupt the current experience.
 
 The address opens in the headset's browser, not on the operator PC. Query strings
@@ -15,7 +20,7 @@ Android accepted the browser launch, not that the page finished loading.
 
 - The existing STYLY-MDM client stays installed; no new client or helper APK is
   needed for URL navigation.
-- Wireless ADB must already be enabled and authorized on the selected headset.
+- Wireless ADB must already be enabled and authorized on each selected headset.
 - The PC needs `monitor-tools/scrcpy-win64-v5.0.1/adb.exe` and its accompanying
   DLLs. The existing Monitor and Venue Suite packages include these tools.
 - A browser must be installed, enabled and permitted by headset policy. If
@@ -46,8 +51,11 @@ schemes, spaces, control characters, and URLs longer than 4096 characters are
 rejected before connecting to the headset. URLs are not stored in the activity
 log; Android diagnostics that can echo URLs are not returned to operators.
 
-Offline devices and concurrent requests to the same browser control are
-rejected. Failures are not automatically retried. The paired touch listener
+The console sends up to four requests concurrently and skips headsets that were
+offline when submitted. Each request still checks the headset's current status
+and identity; a headset that disconnects before its request is reported as a
+failure. Concurrent requests to the same browser control are rejected.
+Failures are not automatically retried. The paired touch listener
 retains its existing action allowlist and does not expose browser control.
 The positioning and live-view holds are unchanged.
 
@@ -60,6 +68,10 @@ Automated tests cover URL validation, unchanged query strings and fragments,
 shell quoting, browser discovery, serial mismatch, offline and missing-tool
 handling, launch errors and timeouts, API validation, cross-origin rejection,
 and touch-listener limits.
+
+UI regression tests also cover multiple selected headsets, offline and unselected
+devices, partial failures, progress/results, bounded concurrency, duplicate
+submission, and selection or URL changes during an active batch.
 
 On 19 November 2026, all 56 Python tests passed, both web scripts passed syntax
 checks, and MDM / Live Ops browser checks passed with a simulated ADB transport.

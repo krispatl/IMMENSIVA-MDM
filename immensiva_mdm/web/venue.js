@@ -2,11 +2,12 @@ document.addEventListener('DOMContentLoaded',()=>{
  const id=n=>document.getElementById(n),command=n=>document.querySelector(`[data-cmd="${n}"]`);
  let state={devices:[],selected:[],groups:{}},task='launch',pending=null,bypass=false;
  let recordingAvailable=false,recordingBusy=false;
- let recordingDevice='',recordingState='unknown',recordingChecked=0,recordingLoading=false,recordingError='',recordingRevision=0;
+ const recordingStates=new Map();
+ let recordingLoading=0,recordingRevision=0;
  let browserAvailable=false,browserBusy=false;
  const deviceId=d=>d.device_id||d.serial_number||'',online=d=>d.status==='online';
  const commands={launch:['launch'],install:['install'],files:['push'],browser:[],recording:[],maintenance:['updateClient','sync','uninstall','startup','verifyApk','verifyDir','power','retire']};
- const hints={launch:'Choose an app, check your headsets, then open it.',install:'Choose the app file (.apk) supplied by your technician.',files:'Copy files to the selected headsets. Files with the same name are replaced.',browser:'Open a website in the selected headset’s browser.',recording:'Control the built-in PICO recorder on one selected headset.',maintenance:'For trained staff. Updates, deletion and power controls can interrupt a session.'};
+ const hints={launch:'Choose an app, check your headsets, then open it.',install:'Choose the app file (.apk) supplied by your technician.',files:'Copy files to the selected headsets. Files with the same name are replaced.',browser:'Open a website in the selected headsets’ browsers.',recording:'Control the built-in PICO recorders on the selected headsets.',maintenance:'For trained staff. Updates, deletion and power controls can interrupt a session.'};
  function showTask(name){task=name;document.body.dataset.operatorTask=name;
  document.querySelectorAll('[data-task]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.task===name)));
  document.querySelectorAll('[data-cmd]').forEach(s=>{s.hidden=!commands[name].includes(s.dataset.cmd);});
@@ -47,15 +48,20 @@ document.addEventListener('DOMContentLoaded',()=>{
  id('fleetHeadline').textContent=!connected?'Console disconnected':!state.devices.length?'Connect your first headset':live.length+' headset'+(live.length===1?'':'s')+' online';
  id('fleetHint').textContent=!connected?'Controls are unavailable until the server reconnects.':!state.devices.length?'Open STYLY-MDM Client in the headset. Use the connection checklist below.':low.length?'Charge low-battery headsets before the next session.':off?'Wake offline headsets and check their connection.':'Choose the headsets for your next action.';
  const selected=state.devices.filter(d=>state.selected.includes(deviceId(d))),names=selected.map(d=>d.label||deviceId(d)),ready=selected.filter(online).length;
- const recordTarget=connected&&selected.length===1&&ready===1?deviceId(selected[0]):'';
- if(recordTarget!==recordingDevice){recordingDevice=recordTarget;recordingState='unknown';recordingChecked=0;recordingError='';}
- const recordReady=recordTarget&&recordingAvailable&&!recordingBusy&&Date.now()-recordingChecked<10000;
- id('btnRecordStart').disabled=!recordReady||recordingState!=='stopped';
- id('btnRecordStop').disabled=!recordReady||recordingState!=='recording';
- id('recordingState').textContent=!recordTarget?'Select one online PICO headset to check recording state.':
-   recordingState==='recording'?'Recording active on headset':recordingState==='stopped'?'Recording stopped':recordingError||'Checking recording state…';
- queueMicrotask(checkRecordingState);
- id('btnOpenUrl').disabled=!connected||!browserAvailable||browserBusy||selected.length!==1||ready!==1;
+ const recordTargets=connected?selected.filter(online):[],recordIds=new Set(recordTargets.map(deviceId));
+ for(const key of recordingStates.keys())if(!recordIds.has(key))recordingStates.delete(key);
+ for(const key of recordIds)if(!recordingStates.has(key))recordingStates.set(key,{state:'unknown',checked:0,attempted:0,loading:false,error:''});
+ const observed=recordTargets.map(d=>{
+ const entry=recordingStates.get(deviceId(d)),current=Date.now()-entry.checked<10000?entry.state:'unknown';
+ return {current,text:(d.label||deviceId(d))+' · '+(current==='recording'?'Recording active':current==='stopped'?'Recording stopped':entry.error||'Checking recording state…')};
+ });
+ const recordReady=recordingAvailable&&!recordingBusy;
+ id('btnRecordStart').disabled=!recordReady||!observed.some(item=>item.current==='stopped');
+ id('btnRecordStop').disabled=!recordReady||!observed.some(item=>item.current==='recording');
+ id('recordingState').textContent=!recordTargets.length?'Select one or more online PICO headsets to check recording state.':observed.map(item=>item.text).join('\n');
+ queueMicrotask(checkRecordingStates);
+ id('btnOpenUrl').disabled=!connected||!browserAvailable||browserBusy||ready===0;
+ id('btnOpenUrl').textContent=browserBusy?'Opening URL…':ready>1?`Open URL on ${ready} headsets`:'Open URL on headset';
  id('operatorUrl').disabled=browserBusy;
  id('operatorSelection').textContent=selected.length?`${ready} online selected · ${names.slice(0,3).join(', ')}${names.length>3?' + '+(names.length-3)+' more':''}${ready<selected.length?' · '+(selected.length-ready)+' offline will be skipped':''}`:'Select a room or headset on the left.';
  id('stepConnect').classList.toggle('step-complete',live.length>0);id('stepSelect').classList.toggle('step-complete',ready>0);
@@ -78,42 +84,83 @@ document.addEventListener('DOMContentLoaded',()=>{
  event.preventDefault();if(id('btnOpenUrl').disabled||browserBusy)return;
  const url=id('operatorUrl').value.trim();
  if(!/^https?:\/\//i.test(url)){id('operatorUrl').setCustomValidity('Enter an http:// or https:// URL.');id('operatorUrl').reportValidity();return;}
- const targets=state.devices.filter(d=>state.selected.includes(deviceId(d)));if(targets.length!==1||!online(targets[0]))return;
- const target=targets[0],name=target.label||deviceId(target);
- browserBusy=true;refresh();id('browserResult').textContent='Opening headset browser · '+name+'…';
+ const selected=state.devices.filter(d=>state.selected.includes(deviceId(d)));
+ const targets=selected.filter(online).map(d=>({device_id:deviceId(d),name:d.label||deviceId(d)}));
+ if(!targets.length||id('connText').textContent!=='Connected')return;
+ const skipped=selected.length-targets.length,results=targets.map(()=>null);
+ let next=0;
+ function showResults(){
+ const completed=results.filter(Boolean),sent=completed.filter(result=>result.ok).length;
+ const summary=completed.length===targets.length?`URL requests complete · ${sent} sent · ${completed.length-sent} failed`:`Opening browsers · ${completed.length}/${targets.length} complete`;
+ id('browserResult').textContent=summary+(skipped?` · ${skipped} offline skipped`:'')+'\n'+targets.map((target,index)=>target.name+' · '+(results[index]?.message||'Waiting…')).join('\n');
+ }
+ async function openNext(){
+ while(next<targets.length){
+ const index=next++,target=targets[index];
  try{
- const response=await fetch('/api/open-url',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({device_id:deviceId(target),url})});
+ const response=await fetch('/api/open-url',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({device_id:target.device_id,url})});
  const result=await response.json();if(!response.ok)throw new Error(result.error||'Browser request failed.');
- id('browserResult').textContent=name+' · '+result.message;
- }catch(error){id('browserResult').textContent=name+' · '+error.message;}
+ results[index]={ok:true,message:result.message};
+ }catch(error){results[index]={ok:false,message:error.message};}
+ showResults();
+ }
+ }
+ browserBusy=true;refresh();showResults();
+ try{await Promise.all(Array.from({length:Math.min(4,targets.length)},openNext));}
  finally{browserBusy=false;refresh();}
  });
  fetch('/api/screen-recording').then(response=>{if(!response.ok)throw new Error();return response.json();}).then(result=>{
  recordingAvailable=result.available;id('recordingResult').textContent=result.available?'Wireless ADB must be enabled and authorized.':'Recording tools are not installed on this PC. See the screen recording setup guide.';refresh();
  }).catch(()=>{id('recordingResult').textContent='Could not check recording tools. Reload the page to try again.';});
- async function checkRecordingState(){
- if(task!=='recording'||document.hidden||!recordingAvailable||!recordingDevice||recordingBusy||recordingLoading||Date.now()-recordingChecked<5000)return;
- const target=recordingDevice,revision=recordingRevision;recordingLoading=true;recordingChecked=Date.now();
+ function checkRecordingStates(){
+ if(task!=='recording'||document.hidden||!recordingAvailable||recordingBusy||id('connText').textContent!=='Connected')return;
+ for(const [target,entry] of [...recordingStates].sort((a,b)=>a[1].attempted-b[1].attempted)){
+ if(recordingLoading>=4)break;
+ if(!entry.loading&&Date.now()-entry.attempted>=5000)checkRecordingState(target,entry);
+ }
+ }
+ async function checkRecordingState(target,entry){
+ const revision=recordingRevision;recordingLoading++;entry.loading=true;entry.attempted=Date.now();
  try{
  const response=await fetch('/api/screen-recording?device_id='+encodeURIComponent(target),{cache:'no-store'});
  const result=await response.json();if(!response.ok)throw new Error(result.error||'Recording state unavailable.');
- if(target===recordingDevice&&revision===recordingRevision){recordingState=result.state;recordingError='';}
- }catch(error){if(target===recordingDevice&&revision===recordingRevision){recordingState='unknown';recordingError=error.message;}}
- finally{recordingLoading=false;refresh();}
+ if(!['recording','stopped'].includes(result.state))throw new Error('Recording state unavailable.');
+ if(recordingStates.get(target)===entry&&revision===recordingRevision){entry.state=result.state;entry.error='';entry.checked=Date.now();}
+ }catch(error){if(recordingStates.get(target)===entry&&revision===recordingRevision){entry.state='unknown';entry.error=error.message;entry.checked=0;}}
+ finally{recordingLoading--;entry.loading=false;refresh();}
  }
  setInterval(()=>{if(task==='recording')refresh();},1500);
  async function setRecording(action){
  if(id(action==='start'?'btnRecordStart':'btnRecordStop').disabled||recordingBusy)return;
- const targets=state.devices.filter(d=>state.selected.includes(deviceId(d)));if(targets.length!==1||!online(targets[0]))return;
- const target=targets[0],name=target.label||deviceId(target);
- const bytes=new Uint8Array(16);crypto.getRandomValues(bytes);const requestId=Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');
- recordingBusy=true;recordingRevision++;refresh();id('recordingResult').textContent=(action==='start'?'Starting':'Stopping')+' recording · '+name+'…';
+ const selected=state.devices.filter(d=>state.selected.includes(deviceId(d)));
+ const targets=selected.filter(online).map(d=>({device_id:deviceId(d),name:d.label||deviceId(d)}));
+ if(!targets.length||id('connText').textContent!=='Connected')return;
+ const skipped=selected.length-targets.length,results=targets.map(()=>null),expected=action==='start'?'recording':'stopped';
+ let next=0;
+ function showResults(){
+ const completed=results.filter(Boolean),confirmed=completed.filter(result=>result.ok).length;
+ const summary=completed.length===targets.length?`${action==='start'?'Start':'Stop'} complete · ${confirmed} confirmed · ${completed.length-confirmed} failed`:`${action==='start'?'Starting':'Stopping'} recording · ${completed.length}/${targets.length} complete`;
+ id('recordingResult').textContent=summary+(skipped?` · ${skipped} offline skipped`:'')+'\n'+targets.map((target,index)=>target.name+' · '+(results[index]?.message||'Waiting…')).join('\n');
+ }
+ async function recordNext(){
+ while(next<targets.length){
+ const index=next++,target=targets[index];
  try{
- const response=await fetch('/api/screen-recording',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({device_id:deviceId(target),action,request_id:requestId})});
+ const bytes=new Uint8Array(16);crypto.getRandomValues(bytes);const requestId=Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');
+ const response=await fetch('/api/screen-recording',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({device_id:target.device_id,action,request_id:requestId})});
  const result=await response.json();if(!response.ok)throw new Error(result.error||'Recording request failed.');
- id('recordingResult').textContent=name+' · '+result.message;
- if(recordingDevice===deviceId(target)){recordingState=result.state;recordingChecked=Date.now();}
- }catch(error){id('recordingResult').textContent=name+' · '+error.message;recordingState='unknown';recordingChecked=0;}
+ if(result.status!=='confirmed'||result.state!==expected)throw new Error('Recording state was not confirmed. Check the headset before retrying.');
+ results[index]={ok:true,message:result.message};
+ if(recordingStates.has(target.device_id))recordingStates.set(target.device_id,{state:result.state,checked:Date.now(),attempted:Date.now(),loading:false,error:''});
+ }catch(error){
+ results[index]={ok:false,message:error.message};
+ if(recordingStates.has(target.device_id))recordingStates.set(target.device_id,{state:'unknown',checked:0,attempted:Date.now(),loading:false,error:error.message});
+ }
+ showResults();
+ }
+ }
+ recordingBusy=true;recordingRevision++;refresh();showResults();
+ try{await Promise.all(Array.from({length:Math.min(4,targets.length)},recordNext));}
  finally{recordingBusy=false;refresh();}
  }
  id('btnRecordStart').addEventListener('click',()=>setRecording('start'));
