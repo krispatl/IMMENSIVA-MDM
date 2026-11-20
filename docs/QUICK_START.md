@@ -30,10 +30,18 @@ Choose **Install app**, select the `.apk` file supplied by your technician, then
 
 ## Open a website
 
-To open a website, select **one online headset**, choose **Open URL**, enter an
-HTTP/HTTPS address and click **Open URL on headset**. This uses authorized
-wireless ADB and can interrupt the current experience. No extra headset APK is
+To open a website, select **one or more online headsets**, choose **Open URL**, enter an
+HTTP/HTTPS address and click **Open URL on N headsets** (**Open URL on headset**
+for one). Offline headsets are skipped; check each headset's result below the form.
+This uses authorized wireless ADB and can interrupt the current experience. No extra headset APK is
 required; see [browser setup](BROWSER_CONTROL.md).
+
+## Screen recording
+
+Select one or more online PICO headsets and choose **Screen recording**. Use
+**Start recording** or **Stop recording** to apply that state to all selected
+online headsets. The console shows each headset's state and result; offline
+headsets are skipped. Videos stay on the headsets. See [recording setup](SCREEN_RECORDING.md).
 
 ## End of session
 

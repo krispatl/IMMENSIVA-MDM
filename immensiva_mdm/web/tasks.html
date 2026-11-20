@@ -20,13 +20,13 @@
   <label for="operatorUrl">Web address</label>
   <input id="operatorUrl" class="field" type="url" required maxlength="4096" placeholder="https://example.com" autocomplete="url" autocapitalize="none" spellcheck="false" aria-describedby="browserHint">
   <button id="btnOpenUrl" class="btn btn-primary" type="submit" disabled>Open URL on headset</button>
-  <p id="browserHint">Select one online headset and enter an http:// or https:// address. Opening the browser may interrupt its current experience.</p>
+  <p id="browserHint">Select one or more online headsets and enter an http:// or https:// address. Offline headsets are skipped. Opening the browsers may interrupt their current experiences.</p>
   <p id="browserResult" role="status">Checking browser controls…</p>
 </form>
 <section id="operatorRecording" class="operator-app-picker" hidden aria-label="PICO screen recording">
   <div><button id="btnRecordStart" class="btn btn-primary" type="button" disabled>Start recording</button>
   <button id="btnRecordStop" class="btn" type="button" disabled>Stop recording</button></div>
-  <p id="recordingState" role="status">Select one online PICO headset to check recording state.</p>
-  <p>Videos stay on the headset. Start leaves an active recording running; Stop leaves a stopped recorder stopped.</p>
+  <p id="recordingState" role="status">Select one or more online PICO headsets to check recording state.</p>
+  <p>Start or Stop applies to all selected online headsets. Offline headsets are skipped. Videos stay on each headset. Start leaves active recordings running; Stop leaves stopped recorders stopped.</p>
   <p id="recordingResult" role="status">Checking recording tools…</p>
 </section>
