@@ -36,6 +36,10 @@ for one). Offline headsets are skipped; check each headset's result below the fo
 This uses authorized wireless ADB and can interrupt the current experience. No extra headset APK is
 required; see [browser setup](BROWSER_CONTROL.md).
 
+To close browser tabs, keep the intended headsets selected and click **Close all
+browser tabs** in the same panel. No URL is needed. Check each result. Unsaved page
+input may be lost; bookmarks, cookies and logins are kept.
+
 ## Screen recording
 
 Select one or more online PICO headsets and choose **Screen recording**. Use

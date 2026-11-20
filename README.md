@@ -43,6 +43,10 @@ an HTTP/HTTPS address → **Open URL on N headsets**. Offline headsets are skipp
 and each headset gets its own result. Uses authorized wireless ADB; no extra APK
 is needed. See [browser setup](docs/BROWSER_CONTROL.md).
 
+**Close browser tabs:** in the same **Open URL** panel, choose **Close all browser
+tabs** to close pages on all selected online headsets. Results are verified per
+headset. Bookmarks, cookies and logins are kept; unsaved page input may be lost.
+
 ![Operator guide](docs/images/guide.jpg)
 
 ### If a headset does not appear

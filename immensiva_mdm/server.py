@@ -160,6 +160,25 @@ def create_app():
 
     app.router.add_get('/api/open-url', open_url)
     app.router.add_post('/api/open-url', open_url)
+
+    async def close_browser_tabs(request):
+        if request.content_type != 'application/json':
+            raise web.HTTPUnsupportedMediaType()
+        if request.headers.get('Origin', request.scheme + '://' + request.host) != request.scheme + '://' + request.host:
+            raise web.HTTPForbidden()
+        try:
+            data = await request.json()
+            if not isinstance(data, dict) or not isinstance(data.get('device_id'), str):
+                raise ValueError('Select an online headset.')
+            device = upstream.devices.get(data['device_id'])
+            if not device:
+                return web.json_response({'error': 'Headset is offline or unknown.'}, status=409)
+            result = await headset_browser.close_all_tabs(dict(device))
+            return web.json_response(result, status=200 if result['status'] == 'confirmed' else 409)
+        except (ValueError, RuntimeError, OSError, TimeoutError) as error:
+            return web.json_response({'error': str(error) or 'Browser tab request timed out.'}, status=400)
+
+    app.router.add_post('/api/browser/close-tabs', close_browser_tabs)
     return app
 
 _original_create_app=upstream.create_app

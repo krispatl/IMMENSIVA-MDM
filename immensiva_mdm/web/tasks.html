@@ -20,7 +20,9 @@
   <label for="operatorUrl">Web address</label>
   <input id="operatorUrl" class="field" type="url" required maxlength="4096" placeholder="https://example.com" autocomplete="url" autocapitalize="none" spellcheck="false" aria-describedby="browserHint">
   <button id="btnOpenUrl" class="btn btn-primary" type="submit" disabled>Open URL on headset</button>
+  <button id="btnCloseBrowserTabs" class="btn" type="button" disabled>Close all browser tabs</button>
   <p id="browserHint">Select one or more online headsets and enter an http:// or https:// address. Offline headsets are skipped. Opening the browsers may interrupt their current experiences.</p>
+  <p>Close all browser tabs applies to the selected online headsets. Unsaved page input may be lost. Bookmarks, cookies and logins are kept.</p>
   <p id="browserResult" role="status">Checking browser controls…</p>
 </form>
 <section id="operatorRecording" class="operator-app-picker" hidden aria-label="PICO screen recording">

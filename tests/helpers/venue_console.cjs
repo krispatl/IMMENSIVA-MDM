@@ -11,6 +11,7 @@ const success = () => ({ok: true, json: async () => ({message: 'URL sent to the 
 
 // Run the complete operator script with DOM events and controllable HTTP responses.
 async function consoleUI({available = true, connected = true, respond = success,
+  closeTabs = async () => ({ok: true, json: async () => ({status: 'confirmed', closed: 2, remaining: 0, message: 'Closed all 2 browser tabs.'})}),
   recordingAvailable = false,
   readRecording = async () => ({ok: true, json: async () => ({state: 'stopped'})}),
   record = async ({action}) => ({ok: true, json: async () => ({status: 'confirmed', state: action === 'start' ? 'recording' : 'stopped', message: 'Confirmed.'})}),
@@ -57,7 +58,7 @@ async function consoleUI({available = true, connected = true, respond = success,
     querySelectorAll: selector => selector === '[data-task]' ? taskButtons : [],
   });
   id('connText').textContent = connected ? 'Connected' : 'Disconnected';
-  const posts = [], recordingPosts = [], recordingReads = [];
+  const posts = [], closePosts = [], recordingPosts = [], recordingReads = [];
   vm.runInNewContext(source, {
     document, location: {hostname: 'localhost'}, queueMicrotask, crypto: webcrypto, Date: class extends Date { static now() { return now; } },
     Event: class { constructor(type) { this.type = type; } },
@@ -76,6 +77,12 @@ async function consoleUI({available = true, connected = true, respond = success,
         recordingPosts.push(payload);
         return record(payload);
       }
+      if (endpoint === '/api/browser/close-tabs') {
+        assert.equal(options.method, 'POST');
+        const payload = JSON.parse(options.body);
+        closePosts.push(payload);
+        return closeTabs(payload);
+      }
       assert.equal(endpoint, '/api/open-url');
       assert.equal(options.method, 'POST');
       const payload = JSON.parse(options.body);
@@ -86,7 +93,8 @@ async function consoleUI({available = true, connected = true, respond = success,
   document.dispatchEvent({type: 'DOMContentLoaded'});
   await flush();
   return {
-    id, posts, recordingPosts, recordingReads, document,
+    id, posts, closePosts, recordingPosts, recordingReads, document,
+    closeTabs() { return id('btnCloseBrowserTabs').click(); },
     async task(name) { id('task-' + name).click(); await flush(); },
     async tick(milliseconds = 0) { now += milliseconds; intervals.forEach(callback => callback()); await flush(); },
     record(action) { return id(action === 'start' ? 'btnRecordStart' : 'btnRecordStop').click(); },
