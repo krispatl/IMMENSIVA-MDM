@@ -1,4 +1,4 @@
-# Open a URL on PICO headsets
+# Browser controls on PICO headsets
 
 In the MDM console, select **one or more online headsets**, choose **Open URL**,
 enter a complete `https://` or `http://` address, and press **Open URL on N headsets**
@@ -19,12 +19,42 @@ Android accepted the browser launch, not that the page finished loading.
 ## Requirements
 
 - The existing STYLY-MDM client stays installed; no new client or helper APK is
-  needed for URL navigation.
+  needed for these browser controls.
 - Wireless ADB must already be enabled and authorized on each selected headset.
 - The PC needs `monitor-tools/scrcpy-win64-v5.0.1/adb.exe` and its accompanying
   DLLs. The existing Monitor and Venue Suite packages include these tools.
 - A browser must be installed, enabled and permitted by headset policy. If
   Android presents a browser chooser, set the default browser in the headset.
+
+## Close all browser tabs
+
+In MDM, select the headsets, choose **Open URL**, then click **Close all browser
+tabs**. A URL is not required. Offline devices are skipped; progress and results
+are shown for each online headset. Unsaved page input may be lost. Bookmarks,
+cookies, saved logins, history, and downloaded files are not cleared.
+
+The browser may briefly open to restore and close saved tabs. The command uses
+the PICO browser's WebLayer tab interface over the existing authorized ADB
+connection; it needs no additional headset APK. An unsupported browser reports
+an error without resetting its data. This control is in the MDM console.
+
+If PICO keeps its current system activity and refuses to launch the browser,
+MDM reports that separately. Wake the headset and open its browser once, then
+retry. Android can report `Status: ok` even when it did not start the browser;
+MDM does not treat that response alone as success.
+
+Each request verifies the headset serial and resolves the default browser, then
+uses only the debugging socket matching that browser's process. A temporary
+local ADB forward is removed afterward, including on failure or cancellation.
+The command closes a snapshot of the page tabs and verifies that they disappeared.
+It leaves workers alone and does not chase new pages opened during the operation.
+A newly created empty tab may remain if the browser requires one; this is reported
+explicitly. Any other remaining tabs produce a partial-failure result.
+Tab addresses and titles are not returned to the console or stored in logs.
+
+Reference: [Chromium tab-control endpoints](https://chromedevtools.github.io/devtools-protocol/).
+
+## Packaging
 
 For the standalone MDM package, bundle the approved tools directory with:
 
@@ -87,3 +117,20 @@ All 67 Python tests passed after this correction, including discovery failures
 that must not launch anything. Live launch verification was blocked by automatic
 approval review; first-run prompts and actual page loading still need checking
 inside the headset.
+
+On 20 November 2026, closing tabs was verified on ESPRONCEDA-10 with PICO
+browser 4.0.40: a single-tab probe reduced seven page tabs to six, then the full
+command closed the remaining six and confirmed zero page tabs. Temporary ADB
+forwards were removed after both checks. No browser data reset was used.
+All 108 Python tests (plus four subtests) and 20 UI tests passed. New checks cover
+tab-list verification, partial failures, replacement tabs, unrelated processes,
+HTTP errors, cleanup on cancellation, API validation, and multiple selected HMDs.
+
+The updated running MDM was then tested through its web interface with
+ESPRONCEDA-01, ESPRONCEDA-02 and ESPRONCEDA-10 selected and no URL entered.
+It reported two confirmed, zero failed and one offline skipped: headset 02 closed
+all five page tabs, headset 10 confirmed no open tabs, and offline headset 01
+received no request. An earlier batch also verified independent failure handling
+when headset 04 retained its current system activity and refused to start its
+browser. The resulting message now describes the blocked launch and suggests
+opening the browser in the headset before retrying.

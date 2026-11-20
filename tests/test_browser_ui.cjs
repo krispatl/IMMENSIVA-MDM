@@ -95,3 +95,72 @@ test('A single selected headset still works and invalid URL schemes never submit
   assert.equal(ui.posts.length, 1);
   assert.match(ui.id('browserResult').textContent, /1 sent · 0 failed/);
 });
+
+test('Close tabs needs no URL, targets all selected online headsets and skips offline devices', async () => {
+  const ui = await consoleUI();
+  await ui.select([headset('A'), headset('B'), headset('C', 'offline'), headset('D')], ['A', 'B', 'C']);
+  assert.equal(ui.id('operatorUrl').value, '');
+  assert.equal(ui.id('btnCloseBrowserTabs').disabled, false);
+  await ui.closeTabs();
+  assert.deepEqual(ui.closePosts, [{device_id: 'A'}, {device_id: 'B'}]);
+  assert.equal(ui.posts.length, 0);
+  assert.match(ui.id('browserResult').textContent, /Close tabs complete · 2 confirmed · 0 failed · 1 offline skipped/);
+  assert.match(ui.id('browserResult').textContent, /A · Closed all 2 browser tabs/);
+  assert.equal(ui.id('btnOpenUrl').disabled, false);
+});
+
+test('Close tabs reports partial and unconfirmed responses as individual failures', async () => {
+  const ui = await consoleUI({closeTabs: async ({device_id}) => {
+    if (device_id === 'A') return {ok: false, json: async () => ({status: 'partial', message: 'Closed 2 tabs; 1 remains.'})};
+    if (device_id === 'B') return {ok: true, json: async () => ({status: 'partial', message: 'Not confirmed.'})};
+    return {ok: true, json: async () => ({status: 'confirmed', message: 'No open browser tabs.'})};
+  }});
+  await ui.select(['A', 'B', 'C'].map(id => headset(id)), ['A', 'B', 'C']);
+  await ui.closeTabs();
+  assert.equal(ui.closePosts.length, 3);
+  assert.match(ui.id('browserResult').textContent, /1 confirmed · 2 failed/);
+  assert.match(ui.id('browserResult').textContent, /A · Closed 2 tabs; 1 remains/);
+  assert.match(ui.id('browserResult').textContent, /B · Not confirmed/);
+  assert.match(ui.id('browserResult').textContent, /C · No open browser tabs/);
+});
+
+test('Close tabs holds the original selection and blocks opening or closing again while busy', async () => {
+  const pending = [];
+  const ui = await consoleUI({closeTabs: () => new Promise(resolve => pending.push(resolve))});
+  const devices = Array.from({length: 6}, (_, index) => headset(String(index)));
+  await ui.select(devices, devices.map(device => device.device_id));
+  const batch = ui.closeTabs();
+  assert.equal(ui.closePosts.length, 4);
+  assert.equal(ui.id('btnCloseBrowserTabs').disabled, true);
+  assert.equal(ui.id('btnOpenUrl').disabled, true);
+  assert.equal(ui.id('btnCloseBrowserTabs').textContent, 'Closing tabs…');
+  await ui.select([headset('New')], ['New']);
+  ui.id('operatorUrl').value = 'https://example.com/';
+  await ui.submit();
+  await ui.closeTabs();
+  assert.equal(ui.posts.length, 0);
+  const result = {ok: true, json: async () => ({status: 'confirmed', message: 'Tabs closed.'})};
+  pending.splice(0).forEach(resolve => resolve(result));
+  await flush();
+  assert.equal(ui.closePosts.length, 6);
+  pending.splice(0).forEach(resolve => resolve(result));
+  await batch;
+  assert.deepEqual(ui.closePosts, devices.map(device => ({device_id: device.device_id})));
+  assert.match(ui.id('browserResult').textContent, /6 confirmed · 0 failed/);
+  assert.equal(ui.id('btnCloseBrowserTabs').disabled, false);
+});
+
+test('Unavailable, disconnected, empty and offline-only selections cannot close tabs', async () => {
+  for (const scenario of [
+    {connected: false, devices: [headset('A')], selected: ['A']},
+    {available: false, devices: [headset('A')], selected: ['A']},
+    {devices: [headset('A')], selected: []},
+    {devices: [headset('A', 'offline')], selected: ['A']},
+  ]) {
+    const ui = await consoleUI(scenario);
+    await ui.select(scenario.devices, scenario.selected);
+    assert.equal(ui.id('btnCloseBrowserTabs').disabled, true);
+    await ui.closeTabs();
+    assert.equal(ui.closePosts.length, 0);
+  }
+});
